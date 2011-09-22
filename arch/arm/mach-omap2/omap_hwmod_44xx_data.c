@@ -1073,7 +1073,7 @@ static struct omap_hwmod_class omap44xx_ctrl_module_hwmod_class = {
 static struct omap_hwmod omap44xx_ctrl_module_core_hwmod;
 static struct omap_hwmod_irq_info omap44xx_ctrl_module_core_irqs[] = {
 	{ .name = "sec_evts", .irq = 8 + OMAP44XX_IRQ_GIC_START },
-	{ .name = "thermal_alert", .irq = 126 + OMAP44XX_IRQ_GIC_START },
+	{ .name = "thermal_alert", .irq = 127 + OMAP44XX_IRQ_GIC_START },
 };
 
 static struct omap_hwmod_addr_space omap44xx_ctrl_module_core_addrs[] = {
@@ -1120,7 +1120,7 @@ static struct omap_hwmod_class omap44xx_thermal_sensor_hwmod_class = {
 };
 
 static struct omap_hwmod_irq_info omap44xx_thermal_sensor_irqs[] = {
-	{ .name = "thermal_alert", .irq = 126 + OMAP44XX_IRQ_GIC_START },
+	{ .name = "thermal_alert", .irq = 127 + OMAP44XX_IRQ_GIC_START },
 };
 
 static struct omap_hwmod_addr_space omap44xx_thermal_sensor_addrs[] = {
