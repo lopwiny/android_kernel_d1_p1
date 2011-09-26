@@ -732,7 +732,6 @@ static void twl6040_pga_hf_work(struct work_struct *work)
 		container_of(work, struct twl6040_data, hf_delayed_work.work);
 	struct snd_soc_codec *codec = priv->codec;
 	struct twl6040_output *handsfree = &priv->handsfree;
-	unsigned int delay = handsfree->step_delay;
 	int i, handsfree_complete;
 
 	/* do we need to ramp at all ? */
@@ -750,15 +749,8 @@ static void twl6040_pga_hf_work(struct work_struct *work)
 		if (handsfree_complete)
 			break;
 
-		/*
-		 * TODO: tune: delay is longer over 0dB
-		 * as increases are larger.
-		 */
-		if (i >= 16)
-			schedule_timeout_interruptible(msecs_to_jiffies(delay +
-						       (delay >> 1)));
-		else
-			schedule_timeout_interruptible(msecs_to_jiffies(delay));
+		schedule_timeout_interruptible(
+				msecs_to_jiffies(handsfree->step_delay));
 	}
 
 
