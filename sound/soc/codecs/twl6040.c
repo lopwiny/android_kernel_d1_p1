@@ -693,7 +693,6 @@ static void twl6040_pga_hs_work(struct work_struct *work)
 		container_of(work, struct twl6040_data, hs_delayed_work.work);
 	struct snd_soc_codec *codec = priv->codec;
 	struct twl6040_output *headset = &priv->headset;
-	unsigned int delay = headset->step_delay;
 	int i, headset_complete;
 
 	/* do we need to ramp at all ? */
@@ -710,15 +709,8 @@ static void twl6040_pga_hs_work(struct work_struct *work)
 		if (headset_complete)
 			break;
 
-		/*
-		 * TODO: tune: delay is longer over 0dB
-		 * as increases are larger.
-		 */
-		if (i >= 8)
-			schedule_timeout_interruptible(msecs_to_jiffies(delay +
-							(delay >> 1)));
-		else
-			schedule_timeout_interruptible(msecs_to_jiffies(delay));
+		schedule_timeout_interruptible(
+				msecs_to_jiffies(headset->step_delay));
 	}
 
 #ifdef CONFIG_SOUND_CONTROL
