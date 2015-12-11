@@ -681,7 +681,6 @@ config IDIV_EMULATE
 	bool "Emulate SDIV/UDIV instructions"
 	depends on !CPU_USE_DOMAINS && CPU_V7
 	select HAVE_PROC_CPU if PROC_FS
-	default y if SMP
 	help
 
 	  The Virtualization Extensions introduce the requirement for an
