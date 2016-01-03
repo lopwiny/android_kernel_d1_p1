@@ -2874,10 +2874,28 @@ static void __init omap_4430sdp_reserve(void)
 {
 	omap_init_ram_size();
 
+#if defined(CONFIG_FB_OMAP2_NUM_FBS)
+#define OMAPLFB_NUM_DEV CONFIG_FB_OMAP2_NUM_FBS
+#else
+#define OMAPLFB_NUM_DEV 1
+#endif
+
+static struct sgx_omaplfb_config omaplfb_config_blaze[OMAPLFB_NUM_DEV] = {
+    {
+        .vram_buffers = 2,
+        .swap_chain_length = 2,
+    }
+};
+
+static struct sgx_omaplfb_platform_data blaze_omaplfb_plat_data = {
+    .num_configs = OMAPLFB_NUM_DEV,
+    .configs = omaplfb_config_blaze,
+};
+
 #ifdef CONFIG_ION_OMAP
 	omap_android_display_setup(&sdp4430_dss_data,
 				   NULL,
-				   NULL,
+				   &blaze_omaplfb_plat_data,
 				   &blaze_fb_pdata,
 				   get_omap_ion_platform_data());
 	omap_ion_init();
