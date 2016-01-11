@@ -5113,7 +5113,6 @@ static void mem_cgroup_destroy(struct cgroup_subsys *ss,
 	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
 
 	mem_cgroup_put(mem);
-	vmpressure_cleanup(&memcg->vmpressure);
 }
 
 static int mem_cgroup_populate(struct cgroup_subsys *ss,
