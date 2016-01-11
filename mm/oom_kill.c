@@ -526,11 +526,11 @@ static void oom_kill_process(struct task_struct *p, gfp_t gfp_mask, int order,
 			pr_err("Kill process %d (%s) sharing same memory\n",
 				task_pid_nr(p), p->comm);
 			task_unlock(p);
-			do_send_sig_info(SIGKILL, SEND_SIG_FORCED, p, true);
+			force_sig(SIGKILL, p);
 		}
 
 	set_tsk_thread_flag(victim, TIF_MEMDIE);
-	do_send_sig_info(SIGKILL, SEND_SIG_FORCED, victim, true);
+	force_sig(SIGKILL, victim);
 }
 #undef K
 
