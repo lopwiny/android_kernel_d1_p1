@@ -17,11 +17,12 @@
 /*
  * See Documentation/block/deadline-iosched.txt
  */
-static const int read_expire = 1000;	/* max time before a read is submitted. */
-static const int write_expire = 5000;	/* ditto for writes, these limits are SOFT! */
-static const int writes_starved = 1;	/* max times reads can starve a write */
-static const int fifo_batch = 1;	/* # of sequential requests treated as one
-					  by the above parameters. For throughput. */
+static const int read_expire = HZ / 2;  /* max time before a read is submitted. */
+static const int write_expire = 5 * HZ; /* ditto for writes, these limits are SOFT! */
+static const int writes_starved = 2;    /* max times reads can starve a write */
+static const int fifo_batch = 16;       /* # of sequential requests treated as one
+				     by the above parameters. For throughput. */
+
 struct deadline_data {
 	/*
 	 * run time data
@@ -76,10 +77,8 @@ static void
 deadline_add_rq_rb(struct deadline_data *dd, struct request *rq)
 {
 	struct rb_root *root = deadline_rb_root(dd, rq);
-	struct request *__alias;
 
-	while (unlikely(__alias = elv_rb_add(root, rq)))
-		deadline_move_request(dd, __alias);
+	elv_rb_add(root, rq);
 }
 
 static inline void
@@ -231,7 +230,7 @@ static inline int deadline_check_fifo(struct deadline_data *dd, int ddir)
 	/*
 	 * rq is expired!
 	 */
-	if (time_after_eq(jiffies, rq_fifo_time(rq)))
+	if (time_after(jiffies, rq_fifo_time(rq)))
 		return 1;
 
 	return 0;
@@ -353,7 +352,7 @@ static void *deadline_init_queue(struct request_queue *q)
 	dd->fifo_expire[READ] = read_expire;
 	dd->fifo_expire[WRITE] = write_expire;
 	dd->writes_starved = writes_starved;
-	dd->front_merges = 0;
+	dd->front_merges = 1;
 	dd->fifo_batch = fifo_batch;
 	return dd;
 }
@@ -449,9 +448,7 @@ static struct elevator_type iosched_deadline = {
 
 static int __init deadline_init(void)
 {
-	elv_register(&iosched_deadline);
-
-	return 0;
+	return elv_register(&iosched_deadline);
 }
 
 static void __exit deadline_exit(void)
