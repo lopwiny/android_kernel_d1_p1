@@ -549,7 +549,7 @@ void elv_requeue_request(struct request_queue *q, struct request *rq)
 	__elv_add_request(q, rq, ELEVATOR_INSERT_REQUEUE);
 }
 
- /**
+/**
  * elv_reinsert_request() - Insert a request back to the scheduler
  * @q:		request queue where request should be inserted
  * @rq:		request to be inserted
@@ -563,10 +563,10 @@ int elv_reinsert_request(struct request_queue *q, struct request *rq)
 {
 	int res;
 
-	if (!q->elevator->elevator_type->ops.elevator_reinsert_req_fn)
+	if (!q->elevator->type->ops.elevator_reinsert_req_fn)
 		return -EPERM;
 
-	res = q->elevator->elevator_type->ops.elevator_reinsert_req_fn(q, rq);
+	res = q->elevator->type->ops.elevator_reinsert_req_fn(q, rq);
 	if (!res) {
 		/*
 		 * it already went through dequeue, we need to decrement the
