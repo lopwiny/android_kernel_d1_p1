@@ -1339,7 +1339,7 @@ unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
 
 /**
  * mem_cgroup_margin - calculate chargeable space of a memory cgroup
- * @memcg: the memory cgroup
+ * @mem: the memory cgroup
  *
  * Returns the maximum amount of memory @mem can be charged with, in
  * pages.
@@ -1590,7 +1590,7 @@ mem_cgroup_select_victim(struct mem_cgroup *root_mem)
 
 /**
  * test_mem_cgroup_node_reclaimable
- * @memcg: the target memcg
+ * @mem: the target memcg
  * @nid: the node ID to be checked.
  * @noswap : specify true here if the user wants flle only information.
  *
@@ -1907,7 +1907,7 @@ static void memcg_oom_recover(struct mem_cgroup *mem)
 /*
  * try to call OOM killer. returns false if we should exit memory-reclaim loop.
  */
-bool mem_cgroup_handle_oom(struct mem_cgroup *mem, gfp_t mask, int order)
+bool mem_cgroup_handle_oom(struct mem_cgroup *mem, gfp_t mask)
 {
 	struct oom_wait_info owait;
 	bool locked, need_to_kill;
@@ -1935,7 +1935,7 @@ bool mem_cgroup_handle_oom(struct mem_cgroup *mem, gfp_t mask, int order)
 
 	if (need_to_kill) {
 		finish_wait(&memcg_oom_waitq, &owait.wait);
-		mem_cgroup_out_of_memory(mem, mask, order);
+		mem_cgroup_out_of_memory(mem, mask);
 	} else {
 		schedule();
 		finish_wait(&memcg_oom_waitq, &owait.wait);
@@ -2293,7 +2293,7 @@ static int mem_cgroup_do_charge(struct mem_cgroup *mem, gfp_t gfp_mask,
 	if (!oom_check)
 		return CHARGE_NOMEM;
 	/* check OOM */
-	if (!mem_cgroup_handle_oom(mem_over_limit, gfp_mask, get_order(csize)))
+	if (!mem_cgroup_handle_oom(mem_over_limit, gfp_mask))
 		return CHARGE_OOM_DIE;
 
 	return CHARGE_RETRY;
@@ -2872,12 +2872,12 @@ int mem_cgroup_cache_charge(struct page *page, struct mm_struct *mm,
  */
 int mem_cgroup_try_charge_swapin(struct mm_struct *mm,
 				 struct page *page,
-				 gfp_t mask, struct mem_cgroup **memcgp)
+				 gfp_t mask, struct mem_cgroup **ptr)
 {
 	struct mem_cgroup *mem;
 	int ret;
 
-	*memcgp = NULL;
+	*ptr = NULL;
 
 	if (mem_cgroup_disabled())
 		return 0;
@@ -2895,27 +2895,27 @@ int mem_cgroup_try_charge_swapin(struct mm_struct *mm,
 	mem = try_get_mem_cgroup_from_page(page);
 	if (!mem)
 		goto charge_cur_mm;
-	*memcgp = memcg;
-	ret = __mem_cgroup_try_charge(NULL, mask, 1, memcgp, true);
-	css_put(&memcg->css);
+	*ptr = mem;
+	ret = __mem_cgroup_try_charge(NULL, mask, 1, ptr, true);
+	css_put(&mem->css);
 	return ret;
 charge_cur_mm:
 	if (unlikely(!mm))
 		mm = &init_mm;
-	return __mem_cgroup_try_charge(mm, mask, 1, memcgp, true);
+	return __mem_cgroup_try_charge(mm, mask, 1, ptr, true);
 }
 
 static void
-__mem_cgroup_commit_charge_swapin(struct page *page, struct mem_cgroup *memcg,
+__mem_cgroup_commit_charge_swapin(struct page *page, struct mem_cgroup *ptr,
 					enum charge_type ctype)
 {
 	if (mem_cgroup_disabled())
 		return;
-	if (!memcg)
+	if (!ptr)
 		return;
-	cgroup_exclude_rmdir(&memcg->css);
+	cgroup_exclude_rmdir(&ptr->css);
 
-	__mem_cgroup_commit_charge_lrucare(page, memcg, ctype);
+	__mem_cgroup_commit_charge_lrucare(page, ptr, ctype);
 	/*
 	 * Now swap is on-memory. This means this page may be
 	 * counted both as mem and swap....double count.
@@ -2925,22 +2925,21 @@ __mem_cgroup_commit_charge_swapin(struct page *page, struct mem_cgroup *memcg,
 	 */
 	if (do_swap_account && PageSwapCache(page)) {
 		swp_entry_t ent = {.val = page_private(page)};
-		struct mem_cgroup *swap_memcg;
 		unsigned short id;
+		struct mem_cgroup *memcg;
 
 		id = swap_cgroup_record(ent, 0);
 		rcu_read_lock();
-		swap_memcg = mem_cgroup_lookup(id);
-		if (swap_memcg) {
+		memcg = mem_cgroup_lookup(id);
+		if (memcg) {
 			/*
 			 * This recorded memcg can be obsolete one. So, avoid
 			 * calling css_tryget
 			 */
-			if (!mem_cgroup_is_root(swap_memcg))
-				res_counter_uncharge(&swap_memcg->memsw,
-						     PAGE_SIZE);
-			mem_cgroup_swap_statistics(swap_memcg, false);
-			mem_cgroup_put(swap_memcg);
+			if (!mem_cgroup_is_root(memcg))
+				res_counter_uncharge(&memcg->memsw, PAGE_SIZE);
+			mem_cgroup_swap_statistics(memcg, false);
+			mem_cgroup_put(memcg);
 		}
 		rcu_read_unlock();
 	}
@@ -2949,14 +2948,13 @@ __mem_cgroup_commit_charge_swapin(struct page *page, struct mem_cgroup *memcg,
 	 * So, rmdir()->pre_destroy() can be called while we do this charge.
 	 * In that case, we need to call pre_destroy() again. check it here.
 	 */
-	cgroup_release_and_wakeup_rmdir(&memcg->css);
+	cgroup_release_and_wakeup_rmdir(&ptr->css);
 }
 
-void mem_cgroup_commit_charge_swapin(struct page *page,
-				     struct mem_cgroup *memcg)
+void mem_cgroup_commit_charge_swapin(struct page *page, struct mem_cgroup *ptr)
 {
-	__mem_cgroup_commit_charge_swapin(page, memcg,
-					  MEM_CGROUP_CHARGE_TYPE_MAPPED);
+	__mem_cgroup_commit_charge_swapin(page, ptr,
+					MEM_CGROUP_CHARGE_TYPE_MAPPED);
 }
 
 void mem_cgroup_cancel_charge_swapin(struct mem_cgroup *mem)
@@ -3285,14 +3283,14 @@ static inline int mem_cgroup_move_swap_account(swp_entry_t entry,
  * page belongs to.
  */
 int mem_cgroup_prepare_migration(struct page *page,
-	struct page *newpage, struct mem_cgroup **memcgp, gfp_t gfp_mask)
+	struct page *newpage, struct mem_cgroup **ptr, gfp_t gfp_mask)
 {
 	struct mem_cgroup *mem = NULL;
 	struct page_cgroup *pc;
 	enum charge_type ctype;
 	int ret = 0;
 
-	*memcgp = NULL;
+	*ptr = NULL;
 
 	VM_BUG_ON(PageTransHuge(page));
 	if (mem_cgroup_disabled())
@@ -3343,10 +3341,10 @@ int mem_cgroup_prepare_migration(struct page *page,
 	if (!mem)
 		return 0;
 
-	*memcgp = memcg;
-	ret = __mem_cgroup_try_charge(NULL, gfp_mask, 1, memcgp, false);
-	css_put(&memcg->css);/* drop extra refcnt */
-	if (ret || *memcgp == NULL) {
+	*ptr = mem;
+	ret = __mem_cgroup_try_charge(NULL, gfp_mask, 1, ptr, false);
+	css_put(&mem->css);/* drop extra refcnt */
+	if (ret || *ptr == NULL) {
 		if (PageAnon(page)) {
 			lock_page_cgroup(pc);
 			ClearPageCgroupMigration(pc);
@@ -5113,7 +5111,6 @@ static void mem_cgroup_destroy(struct cgroup_subsys *ss,
 	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
 
 	mem_cgroup_put(mem);
-	vmpressure_cleanup(&memcg->vmpressure);
 }
 
 static int mem_cgroup_populate(struct cgroup_subsys *ss,
