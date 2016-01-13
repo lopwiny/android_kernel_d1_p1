@@ -261,7 +261,7 @@ static void tcp_delack_timer(unsigned long data)
 	}
 
 out:
-	if (sk_under_memory_pressure(sk))
+	if (tcp_memory_pressure)
 		sk_mem_reclaim(sk);
 out_unlock:
 	bh_unlock_sock(sk);
