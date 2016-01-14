@@ -14,13 +14,6 @@
  * version 2. This program is licensed "as is" without any warranty of any
  * kind, whether express or implied.
  */
-/*============================================================================================
- *
- *histroy
- *
- * DTS                 who          when         why
- *============================================================================================
- */
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/debugfs.h>
@@ -29,7 +22,6 @@
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
-#include <linux/workqueue.h>
 #include <linux/timer.h>
 #include <linux/clk.h>
 #include <linux/mmc/host.h>
@@ -243,7 +235,6 @@ struct omap_hsmmc_host {
 	 */
 	struct	regulator	*vcc;
 	struct	regulator	*vcc_aux;
-	struct	work_struct	mmc_carddetect_work;
 	void	__iomem		*base;
 	resource_size_t		mapbase;
 	spinlock_t		irq_lock; /* Prevent races with irq handler */
@@ -1416,18 +1407,17 @@ static void omap_hsmmc_protect_card(struct omap_hsmmc_host *host)
 }
 
 /*
- * Work Item to notify the core about card insertion/removal
+ * IRQ Tread for handling card insertion and removal
  */
  static unsigned long tisdcc_irqtime = 0;
-static void omap_hsmmc_detect(struct work_struct *work)
+static irqreturn_t omap_hsmmc_cd_thread_handler(int irq, void *dev_id)
 {
-	struct omap_hsmmc_host *host =
-		container_of(work, struct omap_hsmmc_host, mmc_carddetect_work);
+	struct omap_hsmmc_host *host = (struct omap_hsmmc_host *)dev_id;
 	struct omap_mmc_slot_data *slot = &mmc_slot(host);
 	int carddetect; 
 	unsigned long duration = 0;
 	if (host->suspended)
-		return;
+		return IRQ_HANDLED;
 
 	sysfs_notify(&host->mmc->class_dev.kobj, NULL, "cover_switch");
 
@@ -1463,19 +1453,6 @@ static void omap_hsmmc_detect(struct work_struct *work)
 		mmc_detect_change(host->mmc, 0);
 	}
 	tisdcc_irqtime = jiffies ;
-}
-
-/*
- * ISR for handling card insertion and removal
- */
-static irqreturn_t omap_hsmmc_cd_handler(int irq, void *dev_id)
-{
-	struct omap_hsmmc_host *host = (struct omap_hsmmc_host *)dev_id;
-
-	if (host->suspended)
-		return IRQ_HANDLED;
-	schedule_work(&host->mmc_carddetect_work);
-
 	return IRQ_HANDLED;
 }
 
@@ -2486,7 +2463,6 @@ static int __init omap_hsmmc_probe(struct platform_device *pdev)
 #endif
 
 	platform_set_drvdata(pdev, host);
-	INIT_WORK(&host->mmc_carddetect_work, omap_hsmmc_detect);
 
 	if (mmc_slot(host).power_saving)
 		mmc->ops	= &omap_hsmmc_ps_ops;
@@ -2658,10 +2634,10 @@ static int __init omap_hsmmc_probe(struct platform_device *pdev)
 
 	/* Request IRQ for card detect */
 	if ((mmc_slot(host).card_detect_irq)) {
-		ret = request_irq(mmc_slot(host).card_detect_irq,
-				  omap_hsmmc_cd_handler,
+		ret = request_threaded_irq(mmc_slot(host).card_detect_irq, NULL,
+				  omap_hsmmc_cd_thread_handler,
 				  IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING
-					  | IRQF_DISABLED,
+					  | IRQF_ONESHOT,
 				  mmc_hostname(mmc), host);
 		if (ret) {
 			dev_dbg(mmc_dev(host->mmc),
@@ -2751,7 +2727,6 @@ static int omap_hsmmc_remove(struct platform_device *pdev)
 		free_irq(host->irq, host);
 		if (mmc_slot(host).card_detect_irq)
 			free_irq(mmc_slot(host).card_detect_irq, host);
-		flush_work_sync(&host->mmc_carddetect_work);
 
 		if (host->adma_table != NULL)
 			dma_free_coherent(NULL, ADMA_TABLE_SZ,
@@ -2803,7 +2778,6 @@ static int omap_hsmmc_suspend(struct device *dev)
 				return ret;
 			}
 		}
-		cancel_work_sync(&host->mmc_carddetect_work);
 		if (mmc_slot(host).mmc_data.built_in)
 			host->mmc->pm_flags |= MMC_PM_KEEP_POWER;
 		if( pdev->id != WLAN_IDX )
