@@ -25,7 +25,7 @@
 #include <linux/i2c/twl.h>
 #include <linux/power_supply.h>
 #include <linux/i2c/twl6030-gpadc.h>
-//#include <linux/i2c/bq2415x.h>
+#include <linux/i2c/bq2416x.h>
 #include <linux/wakelock.h>
 #include <linux/usb/otg.h>
 #include <linux/i2c/bq27510_battery.h>
@@ -773,7 +773,7 @@ static void twl6030_stop_ac_charger(struct twl6030_bci_device_info *di)
 
 	di->charger_source = 0;
 	di->charge_status = POWER_SUPPLY_STATUS_DISCHARGING;
-	events = BQ2415x_STOP_CHARGING;
+	events = BQ2416x_STOP_CHARGING;
 
 	if (di->use_hw_charger)
 		return;
@@ -800,7 +800,7 @@ static void twl6030_start_ac_charger(struct twl6030_bci_device_info *di)
 	dev_dbg(di->dev, "AC charger detected\n");
 	di->charger_source = POWER_SUPPLY_TYPE_MAINS;
 	di->charge_status = POWER_SUPPLY_STATUS_CHARGING;
-	events = BQ2415x_START_CHARGING;
+	events = BQ2416x_START_CHARGING;
 
 	if (di->use_hw_charger)
 		return;
@@ -939,7 +939,7 @@ static irqreturn_t twl6030charger_ctrl_interrupt(int irq, void *_di)
 	di->stat1 = present_charge_state;
 	if ((charge_state & VAC_DET) &&
 		(charge_state & CONTROLLER_STAT1_EXTCHRG_STATZ)) {
-		events = BQ2415x_CHARGER_FAULT;
+		events = BQ2416x_CHARGER_FAULT;
 		blocking_notifier_call_chain(&notifier_list, events, NULL);
 	}
 
@@ -3493,7 +3493,7 @@ static int twl6030_bci_battery_suspend(struct device *dev)
 	}
 
 	/*reset the BQ watch dog*/
-	events = BQ2415x_RESET_TIMER;
+	events = BQ2416x_RESET_TIMER;
 	blocking_notifier_call_chain(&notifier_list, events, NULL);
 
 	ret = twl6030battery_temp_setup(false);
@@ -3557,7 +3557,7 @@ static int twl6030_bci_battery_resume(struct device *dev)
 	schedule_delayed_work(&di->twl6030_bci_monitor_work, 0);
 	schedule_delayed_work(&di->twl6030_current_avg_work, 50);
 
-	events = BQ2415x_RESET_TIMER;
+	events = BQ2416x_RESET_TIMER;
 	blocking_notifier_call_chain(&notifier_list, events, NULL);
 #endif
 

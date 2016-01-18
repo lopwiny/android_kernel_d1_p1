@@ -16,7 +16,7 @@
 #include <linux/memblock.h>
 #include <linux/spi/spi.h>
 #include <linux/i2c/twl.h>
-#include <linux/i2c/bq2415x.h>
+#include <linux/i2c/bq2416x.h>
 #include <linux/regulator/machine.h>
 #include <linux/regulator/fixed.h>
 #include <linux/regulator/tps6130x.h>
@@ -369,7 +369,7 @@ static struct regulator_init_data twl6040_vddhf = {
 	.driver_data		= &tps6130x_pdata,
 };
 
-static struct bq2415x_platform_data sdp4430_bqdata = {
+static struct bq2416x_platform_data sdp4430_bqdata = {
 	.max_charger_voltagemV = 4200,
 	.max_charger_currentmA = 1550,
 };

@@ -375,7 +375,7 @@ Problem NO.         Name                    Time       Reason
 #include <linux/spi/spi.h>
 #include <linux/i2c/twl.h>
 #include <linux/i2c/cma3000.h>
-#include <linux/i2c/bq2415x.h>
+#include <linux/i2c/bq2416x.h>
 #include <linux/regulator/machine.h>
 #include <linux/regulator/tps6130x.h>
 #include <linux/input/sfh7741.h>

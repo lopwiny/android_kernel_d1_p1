@@ -47,7 +47,6 @@ obj-$(CONFIG_BATTERY_BQ27510)	+= bq27510_battery.o
 
 obj-$(CONFIG_TWL6030_BCI_BATTERY)	+= twl6030_bci_battery.o
 
-#obj-$(CONFIG_CHARGER_BQ2415x)	+= bq2415x_charger.o
 obj-$(CONFIG_CHARGER_BQ2416x)	+= bq2416x_charger.o
 
 obj-$(CONFIG_NVE)	+= nve_interface.o
