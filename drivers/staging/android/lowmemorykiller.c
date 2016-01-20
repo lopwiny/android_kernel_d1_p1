@@ -40,9 +40,7 @@
 #include <linux/swap.h>
 #include <linux/rcupdate.h>
 #include <linux/notifier.h>
-#ifdef CONFIG_HUAWEI_FEATURE_LOW_MEMORY_KILLER_STUB
-#include "../../char/lowmemorykiller_stub.h"
-#endif
+
 static uint32_t lowmem_debug_level = 1;
 static int lowmem_adj[6] = {
 	0,
@@ -163,9 +161,6 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			     min_score_adj,
 			     other_free * (long)(PAGE_SIZE / 1024));
 		lowmem_deathpending_timeout = jiffies + HZ;
-#ifdef CONFIG_HUAWEI_FEATURE_LOW_MEMORY_KILLER_STUB
-        sysLowKernel_write(selected);
-#endif
 		send_sig(SIGKILL, selected, 0);
 		set_tsk_thread_flag(selected, TIF_MEMDIE);
 		rem -= selected_tasksize;
@@ -184,18 +179,12 @@ static struct shrinker lowmem_shrinker = {
 static int __init lowmem_init(void)
 {
 	register_shrinker(&lowmem_shrinker);
-#ifdef CONFIG_HUAWEI_FEATURE_LOW_MEMORY_KILLER_STUB
-    registerlowmem();
-#endif
 	return 0;
 }
 
 static void __exit lowmem_exit(void)
 {
 	unregister_shrinker(&lowmem_shrinker);
-#ifdef CONFIG_HUAWEI_FEATURE_LOW_MEMORY_KILLER_STUB
-    unregisterlowmem();
-#endif
 }
 
 #ifdef CONFIG_ANDROID_LOW_MEMORY_KILLER_AUTODETECT_OOM_ADJ_VALUES
