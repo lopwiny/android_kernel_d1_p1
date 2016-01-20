@@ -366,7 +366,7 @@ struct files_struct *dup_fd(struct files_struct *oldf, int *errorp)
 			 * is partway through open().  So make sure that this
 			 * fd is available to the new process.
 			 */
-			__clear_open_fd(open_files - i, new_fdt);
+			FD_CLR(open_files - i, new_fdt->open_fds);
 		}
 		rcu_assign_pointer(*new_fds++, f);
 	}
@@ -428,9 +428,9 @@ struct files_struct init_files = {
 /*
  * allocate a file descriptor, mark it busy.
  */
-int __alloc_fd(struct files_struct *files,
-		unsigned start, unsigned end, unsigned flags)
+int alloc_fd(unsigned start, unsigned flags)
 {
+	struct files_struct *files = current->files;
 	unsigned int fd;
 	int error;
 	struct fdtable *fdt;
@@ -446,14 +446,6 @@ repeat:
 		fd = find_next_zero_bit(fdt->open_fds->fds_bits,
 					   fdt->max_fds, fd);
 
-	/*
-	* N.B. For clone tasks sharing a files structure, this test
-	* will limit the total number of files that can be opened.
-	*/
-	error = -EMFILE;
-	if (fd >= end)
-       goto out;
-
 	error = expand_files(files, fd);
 	if (error < 0)
 		goto out;
@@ -468,11 +460,11 @@ repeat:
 	if (start <= files->next_fd)
 		files->next_fd = fd + 1;
 
-	__set_open_fd(fd, fdt);
+	FD_SET(fd, fdt->open_fds);
 	if (flags & O_CLOEXEC)
-		__set_close_on_exec(fd, fdt);
+		FD_SET(fd, fdt->close_on_exec);
 	else
-		__clear_close_on_exec(fd, fdt);
+		FD_CLR(fd, fdt->close_on_exec);
 	error = fd;
 #if 1
 	/* Sanity check */
@@ -487,14 +479,8 @@ out:
 	return error;
 }
 
-int alloc_fd(unsigned start, unsigned flags)
-{
-        return __alloc_fd(current->files, start, rlimit(RLIMIT_NOFILE), flags);
-}
-
 int get_unused_fd(void)
 {
 	return alloc_fd(0, 0);
 }
 EXPORT_SYMBOL(get_unused_fd);
-
