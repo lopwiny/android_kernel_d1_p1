@@ -2551,7 +2551,7 @@ static int ext4_rename(struct inode *old_dir, struct dentry *old_dentry,
 		if (new_inode) {
 			/* checked empty_dir above, can't have another parent,
 			 * ext4_dec_count() won't work for many-linked dirs */
-			clear_nlink(new_inode);
+			new_inode->i_nlink = 0;
 		} else {
 			ext4_inc_count(handle, new_dir);
 			ext4_update_dx_flag(new_dir);

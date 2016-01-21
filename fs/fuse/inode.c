@@ -108,6 +108,7 @@ static struct inode *fuse_alloc_inode(struct super_block *sb)
 static void fuse_i_callback(struct rcu_head *head)
 {
 	struct inode *inode = container_of(head, struct inode, i_rcu);
+	INIT_LIST_HEAD(&inode->i_dentry);
 	kmem_cache_free(fuse_inode_cachep, inode);
 }
 
@@ -642,16 +643,18 @@ static struct dentry *fuse_get_dentry(struct super_block *sb,
 	return ERR_PTR(err);
 }
 
-static int fuse_encode_fh(struct inode *inode, u32 *fh, int *max_len,
-			   struct inode *parent)
+static int fuse_encode_fh(struct dentry *dentry, u32 *fh, int *max_len,
+			   int connectable)
 {
-	int len = parent ? 6 : 3;
+	struct inode *inode = dentry->d_inode;
+	bool encode_parent = connectable && !S_ISDIR(inode->i_mode);
+	int len = encode_parent ? 6 : 3;
 	u64 nodeid;
 	u32 generation;
 
 	if (*max_len < len) {
 		*max_len = len;
-		return  FILEID_INVALID;
+		return  255;
 	}
 
 	nodeid = get_fuse_inode(inode)->nodeid;
@@ -661,9 +664,14 @@ static int fuse_encode_fh(struct inode *inode, u32 *fh, int *max_len,
 	fh[1] = (u32)(nodeid & 0xffffffff);
 	fh[2] = generation;
 
-	if (parent) {
+	if (encode_parent) {
+		struct inode *parent;
+
+		spin_lock(&dentry->d_lock);
+		parent = dentry->d_parent->d_inode;
 		nodeid = get_fuse_inode(parent)->nodeid;
 		generation = parent->i_generation;
+		spin_unlock(&dentry->d_lock);
 
 		fh[3] = (u32)(nodeid >> 32);
 		fh[4] = (u32)(nodeid & 0xffffffff);
@@ -671,7 +679,7 @@ static int fuse_encode_fh(struct inode *inode, u32 *fh, int *max_len,
 	}
 
 	*max_len = len;
-	return parent ? 0x82 : 0x81;
+	return encode_parent ? 0x82 : 0x81;
 }
 
 static struct dentry *fuse_fh_to_dentry(struct super_block *sb,

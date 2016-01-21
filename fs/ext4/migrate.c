@@ -482,7 +482,7 @@ int ext4_ext_migrate(struct inode *inode)
 	 * Set the i_nlink to zero so it will be deleted later
 	 * when we drop inode reference.
 	 */
-	clear_nlink(tmp_inode);
+	tmp_inode->i_nlink = 0;
 
 	ext4_ext_tree_init(handle, tmp_inode);
 	ext4_orphan_add(handle, tmp_inode);

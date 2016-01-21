@@ -1891,9 +1891,9 @@ static int aligned_vread(char *buf, char *addr, unsigned long count)
 			 * we can expect USER0 is not used (see vread/vwrite's
 			 * function description)
 			 */
-			void *map = kmap_atomic(p);
+			void *map = kmap_atomic(p, KM_USER0);
 			memcpy(buf, map + offset, length);
-			kunmap_atomic(map);
+			kunmap_atomic(map, KM_USER0);
 		} else
 			memset(buf, 0, length);
 
@@ -1930,9 +1930,9 @@ static int aligned_vwrite(char *buf, char *addr, unsigned long count)
 			 * we can expect USER0 is not used (see vread/vwrite's
 			 * function description)
 			 */
-			void *map = kmap_atomic(p);
+			void *map = kmap_atomic(p, KM_USER0);
 			memcpy(map + offset, buf, length);
-			kunmap_atomic(map);
+			kunmap_atomic(map, KM_USER0);
 		}
 		addr += length;
 		buf += length;
