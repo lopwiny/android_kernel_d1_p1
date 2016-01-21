@@ -107,7 +107,6 @@ enum pageflags {
 #ifdef CONFIG_MEMORY_FAILURE
 	PG_hwpoison,		/* hardware poisoned page. Don't touch */
 #endif
-
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
 	PG_compound_lock,
 #endif
@@ -116,7 +115,7 @@ enum pageflags {
 #endif
 	PG_readahead,		/* page in a readahead window */
 #ifdef CONFIG_KSM_CHECK_PAGE
-	PG_ksm_scan0,		/* page has been scanned by even KSM cycle */
+	PG_ksm_scan0,           /* page has been scanned by even KSM cycle */
 #endif
 	__NR_PAGEFLAGS,
 
@@ -124,7 +123,6 @@ enum pageflags {
 	/* page has been scanned by odd KSM cycle */
 	PG_ksm_scan1 = PG_owner_priv_1,
 #endif
-
 	/* Filesystems */
 	PG_checked = PG_owner_priv_1,
 
@@ -140,6 +138,9 @@ enum pageflags {
 
 	/* SLOB */
 	PG_slob_free = PG_private,
+
+	/* SLUB */
+	PG_slub_frozen = PG_active,
 };
 
 #ifndef __GENERATING_BOUNDS_H
@@ -229,9 +230,12 @@ CLEARPAGEFLAG(KsmScan0, ksm_scan0) TESTSETFLAG(KsmScan0, ksm_scan0)
 CLEARPAGEFLAG(KsmScan1, ksm_scan1) TESTSETFLAG(KsmScan1, ksm_scan1)
 #endif
 
+__PAGEFLAG(SlubFrozen, slub_frozen)
+
 #ifdef CONFIG_CLEANCACHE
 PAGEFLAG(WasActive, was_active)
 #endif
+
 /*
  * Private page markings that may be used by the filesystem that owns the page
  * for its own purposes.
