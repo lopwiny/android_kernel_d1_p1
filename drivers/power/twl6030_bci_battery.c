@@ -1495,14 +1495,14 @@ static enum power_supply_property twl6030_bci_battery_props[] = {
 	POWER_SUPPLY_PROP_STATUS,
 	POWER_SUPPLY_PROP_HEALTH,
 	POWER_SUPPLY_PROP_ONLINE,
-    POWER_SUPPLY_PROP_PRESENT,
+	POWER_SUPPLY_PROP_PRESENT,
 	POWER_SUPPLY_PROP_VOLTAGE_NOW,
 	POWER_SUPPLY_PROP_CURRENT_NOW,
 	POWER_SUPPLY_PROP_CURRENT_AVG,
 	POWER_SUPPLY_PROP_CAPACITY,
 	POWER_SUPPLY_PROP_TEMP,
-    POWER_SUPPLY_PROP_TECHNOLOGY,
-    POWER_SUPPLY_PROP_CAPACITY_LEVEL,
+	POWER_SUPPLY_PROP_TECHNOLOGY,
+	POWER_SUPPLY_PROP_CAPACITY_LEVEL,
 	POWER_SUPPLY_PROP_CAPACITY_RM,
 	POWER_SUPPLY_PROP_CAPACITY_FCC,
 };
@@ -1756,9 +1756,9 @@ static int calc_capacity_from_voltage(void)
 
 static int capacity_changed(struct twl6030_bci_device_info *di)
 {
-	int curr_capacity = 0;
+    int curr_capacity = 0;
     int battery_voltage = 0;
-	int low_bat_flag = is_bq27510_battery_reach_threshold(&dev27510);
+    int low_bat_flag = is_bq27510_battery_reach_threshold(&dev27510);
 
     di->bat_exist = is_bq27510_battery_exist(&dev27510);
 
@@ -1769,15 +1769,15 @@ static int capacity_changed(struct twl6030_bci_device_info *di)
         curr_capacity = bq27510_battery_capacity(&dev27510);
        /* Setting the capacity level only makes sense when on
         * the battery is powering the board.
-      */
+        */
        if (di->charge_status == POWER_SUPPLY_STATUS_DISCHARGING) {
-           if(curr_capacity <= 2){
+           if (curr_capacity <= 2) {
                battery_voltage = bq27510_battery_voltage(&dev27510);
-               if(battery_voltage >= BAT_VOL_3450){
+               if (battery_voltage >= BAT_VOL_3450) {
                    curr_capacity = 3;
-               }else{
+               } else {
                    dev_info(di->dev,"poweroff_capacity = %d\n" "poweroff_voltage = %d\n",
-                   curr_capacity,battery_voltage);
+                   curr_capacity, battery_voltage);
                    curr_capacity = 2;
                }
             }
@@ -1802,16 +1802,16 @@ static int capacity_changed(struct twl6030_bci_device_info *di)
 
     /*Only availability if the capacity changed*/
     if (curr_capacity != di->prev_capacity) {
-        if (abs(di->capacity -curr_capacity) >= 5){
-            dev_info(di->dev,"prev_capacity = %d \n"
+        if (abs(di->capacity - curr_capacity) >= 5) {
+            dev_info(di->dev, "prev_capacity = %d \n"
             "curr_capacity = %d \n" "curr_voltage = %d \n",
-            di->prev_capacity, curr_capacity,bq27510_battery_voltage(&dev27510));
+            di->prev_capacity, curr_capacity, bq27510_battery_voltage(&dev27510));
        }
        di->capacity_debounce_count = 0;
 
        /*capacity-count will always decrease when discharging*/
-       if( (di->prev_capacity < curr_capacity)
-           && ( (di->charge_status == POWER_SUPPLY_STATUS_DISCHARGING)
+       if ((di->prev_capacity < curr_capacity)
+           && ((di->charge_status == POWER_SUPPLY_STATUS_DISCHARGING)
                 || (di->charge_status == POWER_SUPPLY_STATUS_NOT_CHARGING) ))
        {
            return 0;
