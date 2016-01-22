@@ -65,12 +65,7 @@ static int ceph_encode_fh(struct dentry *dentry, u32 *rawfh, int *max_len,
 	} else if (*max_len >= handle_length) {
 		if (connectable) {
 			*max_len = connected_handle_length;
-			type = FILEID_INVALID;
-		} else {
-			dout("encode_fh %p\n", dentry);
-			fh->ino = ceph_ino(inode);
-			*max_len = handle_length;
-			type = 1;
+			return 255;
 		}
 		dout("encode_fh %p\n", dentry);
 		fh->ino = ceph_ino(dentry->d_inode);
@@ -78,7 +73,7 @@ static int ceph_encode_fh(struct dentry *dentry, u32 *rawfh, int *max_len,
 		type = 1;
 	} else {
 		*max_len = handle_length;
-		type = FILEID_INVALID;
+		return 255;
 	}
 	return type;
 }
@@ -258,9 +253,7 @@ static struct dentry *ceph_fh_to_parent(struct super_block *sb,
 }
 
 const struct export_operations ceph_export_ops = {
-#ifdef CEPH_BREAKAGE_FIXED
 	.encode_fh = ceph_encode_fh,
-#endif
 	.fh_to_dentry = ceph_fh_to_dentry,
 	.fh_to_parent = ceph_fh_to_parent,
 };

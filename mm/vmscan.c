@@ -653,14 +653,13 @@ redo:
 		lru = LRU_UNEVICTABLE;
 		add_page_to_unevictable_list(page);
 		/*
-		 * When racing with an mlock or AS_UNEVICTABLE clearing
-		 * (page is unlocked) make sure that if the other thread
-		 * does not observe our setting of PG_lru and fails
-		 * isolation/check_move_unevictable_page,
-		 * we see PG_mlocked/AS_UNEVICTABLE cleared below and move
+		 * When racing with an mlock clearing (page is
+		 * unlocked), make sure that if the other thread does
+		 * not observe our setting of PG_lru and fails
+		 * isolation, we see PG_mlocked cleared below and move
 		 * the page back to the evictable list.
 		 *
-		 * The other side is TestClearPageMlocked() or shmem_lock().
+		 * The other side is TestClearPageMlocked().
 		 */
 		smp_mb();
 	}
@@ -752,6 +751,24 @@ static enum page_references page_check_references(struct page *page,
 		return PAGEREF_RECLAIM_CLEAN;
 
 	return PAGEREF_RECLAIM;
+}
+
+static noinline_for_stack void free_page_list(struct list_head *free_pages)
+{
+	struct pagevec freed_pvec;
+	struct page *page, *tmp;
+
+	pagevec_init(&freed_pvec, 1);
+
+	list_for_each_entry_safe(page, tmp, free_pages, lru) {
+		list_del(&page->lru);
+		if (!pagevec_add(&freed_pvec, page)) {
+			__pagevec_free(&freed_pvec);
+			pagevec_reinit(&freed_pvec);
+		}
+	}
+
+	pagevec_free(&freed_pvec);
 }
 
 /*
@@ -995,7 +1012,7 @@ keep_lumpy:
 	if (nr_dirty && nr_dirty == nr_congested && scanning_global_lru(sc))
 		zone_set_flag(zone, ZONE_CONGESTED);
 
-	free_hot_cold_page_list(&free_pages, 1);
+	free_page_list(&free_pages);
 
 	list_splice(&ret_pages, page_list);
 	count_vm_events(PGACTIVATE, pgactivate);
@@ -2797,8 +2814,6 @@ out:
 	 * and it is potentially going to sleep here.
 	 */
 	if (order) {
-		int zones_need_compaction = 1;
-
 		for (i = 0; i <= end_zone; i++) {
 			struct zone *zone = pgdat->node_zones + i;
 
@@ -2815,17 +2830,9 @@ out:
 				goto loop_again;
 			}
 
-			/* Check if the memory needs to be defragmented. */
-			if (zone_watermark_ok(zone, order,
-				    low_wmark_pages(zone), *classzone_idx, 0))
-				zones_need_compaction = 0;
-
 			/* If balanced, clear the congested flag */
 			zone_clear_flag(zone, ZONE_CONGESTED);
 		}
-
-		if (zones_need_compaction)
-			compact_pgdat(pgdat, order);
 	}
 
 	/*
@@ -3410,7 +3417,6 @@ int page_evictable(struct page *page, struct vm_area_struct *vma)
 	return 1;
 }
 
-#ifdef CONFIG_SHMEM
 /**
  * check_move_unevictable_page - check page for evictability and move to appropriate zone lru list
  * @page: page to check evictability and move to appropriate lru list
@@ -3421,8 +3427,6 @@ int page_evictable(struct page *page, struct vm_area_struct *vma)
  *
  * Restrictions: zone->lru_lock must be held, page must be on LRU and must
  * have PageUnevictable set.
- *
- * This function is only used for SysV IPC SHM_UNLOCK.
  */
 static void check_move_unevictable_page(struct page *page, struct zone *zone)
 {
@@ -3456,8 +3460,6 @@ retry:
  *
  * Scan all pages in mapping.  Check unevictable pages for
  * evictability and move them to the appropriate zone lru list.
- *
- * This function is only used for SysV IPC SHM_UNLOCK.
  */
 void scan_mapping_unevictable_pages(struct address_space *mapping)
 {
@@ -3503,14 +3505,9 @@ void scan_mapping_unevictable_pages(struct address_space *mapping)
 		pagevec_release(&pvec);
 
 		count_vm_events(UNEVICTABLE_PGSCANNED, pg_scanned);
-		cond_resched();
 	}
+
 }
-#else
-void scan_mapping_unevictable_pages(struct address_space *mapping)
-{
-}
-#endif /* CONFIG_SHMEM */
 
 /**
  * scan_zone_unevictable_pages - check unevictable list for evictable pages

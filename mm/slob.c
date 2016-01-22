@@ -59,8 +59,6 @@
 
 #include <linux/kernel.h>
 #include <linux/slab.h>
-#include "slab.h"
-
 #include <linux/mm.h>
 #include <linux/swap.h> /* struct reclaim_state */
 #include <linux/cache.h>
@@ -559,13 +557,16 @@ size_t ksize(const void *block)
 }
 EXPORT_SYMBOL(ksize);
 
-int __kmem_cache_create(struct kmem_cache *c, unsigned long flags)
-{
-	size_t align = c->size;
+struct kmem_cache {
+	unsigned int size, align;
+	unsigned long flags;
+	const char *name;
+	void (*ctor)(void *);
+};
 
-	if (flags & SLAB_DESTROY_BY_RCU) {
-		/* leave room for rcu footer at the end of object */
-		c->size += sizeof(struct slob_rcu);
+struct kmem_cache *kmem_cache_create(const char *name, size_t size,
+	size_t align, unsigned long flags, void (*ctor)(void *))
+{
 	struct kmem_cache *c;
 
 	c = slob_alloc(sizeof(struct kmem_cache),
@@ -573,7 +574,7 @@ int __kmem_cache_create(struct kmem_cache *c, unsigned long flags)
 
 	if (c) {
 		c->name = name;
-		c->size = c->object_size;
+		c->size = size;
 		if (flags & SLAB_DESTROY_BY_RCU) {
 			/* leave room for rcu footer at the end of object */
 			c->size += sizeof(struct slob_rcu);
@@ -586,20 +587,22 @@ int __kmem_cache_create(struct kmem_cache *c, unsigned long flags)
 			c->align = ARCH_SLAB_MINALIGN;
 		if (c->align < align)
 			c->align = align;
+	} else if (flags & SLAB_PANIC)
+		panic("Cannot create slab cache %s\n", name);
 
-		kmemleak_alloc(c, sizeof(struct kmem_cache), 1, GFP_KERNEL);
-		c->refcount = 1;
-	}
-	c->flags = flags;
-	/* ignore alignment unless it's forced */
-	c->align = (flags & SLAB_HWCACHE_ALIGN) ? SLOB_ALIGN : 0;
-	if (c->align < ARCH_SLAB_MINALIGN)
-		c->align = ARCH_SLAB_MINALIGN;
-	if (c->align < align)
-		c->align = align;
-
-	return 0;
+	kmemleak_alloc(c, sizeof(struct kmem_cache), 1, GFP_KERNEL);
+	return c;
 }
+EXPORT_SYMBOL(kmem_cache_create);
+
+void kmem_cache_destroy(struct kmem_cache *c)
+{
+	kmemleak_free(c);
+	if (c->flags & SLAB_DESTROY_BY_RCU)
+		rcu_barrier();
+	slob_free(c, sizeof(struct kmem_cache));
+}
+EXPORT_SYMBOL(kmem_cache_destroy);
 
 void *kmem_cache_alloc_node(struct kmem_cache *c, gfp_t flags, int node)
 {
@@ -657,11 +660,11 @@ void kmem_cache_free(struct kmem_cache *c, void *b)
 }
 EXPORT_SYMBOL(kmem_cache_free);
 
-int __kmem_cache_shutdown(struct kmem_cache *c)
+unsigned int kmem_cache_size(struct kmem_cache *c)
 {
-	/* No way to check for remaining objects */
-	return 0;
+	return c->size;
 }
+EXPORT_SYMBOL(kmem_cache_size);
 
 int kmem_cache_shrink(struct kmem_cache *d)
 {
@@ -669,20 +672,19 @@ int kmem_cache_shrink(struct kmem_cache *d)
 }
 EXPORT_SYMBOL(kmem_cache_shrink);
 
-struct kmem_cache kmem_cache_boot = {
-	.name = "kmem_cache",
-	.size = sizeof(struct kmem_cache),
-	.flags = SLAB_PANIC,
-	.align = ARCH_KMALLOC_MINALIGN,
-};
+static unsigned int slob_ready __read_mostly;
+
+int slab_is_available(void)
+{
+	return slob_ready;
+}
 
 void __init kmem_cache_init(void)
 {
-	kmem_cache = &kmem_cache_boot;
-	slab_state = UP;
+	slob_ready = 1;
 }
 
 void __init kmem_cache_init_late(void)
 {
-	slab_state = FULL;
+	/* Nothing to do */
 }
