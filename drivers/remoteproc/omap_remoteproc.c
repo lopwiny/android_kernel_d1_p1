@@ -576,7 +576,6 @@ static struct rproc_ops omap_rproc_ops = {
 	.watchdog_exit = omap_rproc_watchdog_exit,
 #endif
 	.dump_registers = omap_rproc_dump_registers,
-	.pm_init = omap_rproc_pm_init,
 };
 
 static int omap_rproc_probe(struct platform_device *pdev)
