@@ -2674,18 +2674,6 @@ static int blaze_notifier_call(struct notifier_block *this,
             v |= OMAP4430_RST_GLOBAL_COLD_SW_MASK;
         }
 
-#if defined(CONFIG_DSSCOMP) && defined(CONFIG_EARLYSUSPEND)
-	/*
-	 * HACK: Blank screen to avoid screen artifacts due to removal of
-	 * DSS/panel drivers shutdown in reboot path.
-	 */
-	{
-		extern void dsscomp_early_suspend(struct early_suspend *h);
-
-		dsscomp_early_suspend(NULL);
-	}
-#endif
-
     /*omap4_prm_write_inst_reg(0xfff, OMAP4430_PRM_DEVICE_INST,
             OMAP4_RM_RSTST);
     omap4_prm_write_inst_reg(v, OMAP4430_PRM_DEVICE_INST, OMAP4_RM_RSTCTRL);
@@ -2911,7 +2899,6 @@ static struct sgx_omaplfb_platform_data blaze_omaplfb_plat_data = {
 			OMAP_RAM_CONSOLE_SIZE_DEFAULT);
 
 	/* do the static reservations first */
-	memblock_remove(PHYS_ADDR_SMC_MEM, PHYS_ADDR_SMC_SIZE);
 	memblock_remove(PHYS_ADDR_DUCATI_MEM, PHYS_ADDR_DUCATI_SIZE);
 	/* ipu needs to recognize secure input buffer area as well */
 	omap_ipu_set_static_mempool(PHYS_ADDR_DUCATI_MEM,
