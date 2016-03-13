@@ -42,9 +42,7 @@ struct mnt_namespace;
  * flag, consider how it interacts with shared mounts.
  */
 #define MNT_SHARED_MASK	(MNT_UNBINDABLE)
-#define MNT_USER_SETTABLE_MASK  (MNT_NOSUID | MNT_NODEV | MNT_NOEXEC \
-				 | MNT_NOATIME | MNT_NODIRATIME | MNT_RELATIME \
-				 | MNT_READONLY)
+#define MNT_PROPAGATION_MASK	(MNT_SHARED | MNT_UNBINDABLE)
 
 
 #define MNT_INTERNAL	0x4000
@@ -62,7 +60,6 @@ struct vfsmount {
 	struct super_block *mnt_sb;	/* pointer to superblock */
 #ifdef CONFIG_SMP
 	struct mnt_pcp __percpu *mnt_pcp;
-	atomic_t mnt_longterm;		/* how many of the refs are longterm */
 #else
 	int mnt_count;
 	int mnt_writers;
@@ -102,9 +99,6 @@ extern struct vfsmount *mntget(struct vfsmount *mnt);
 extern void mnt_pin(struct vfsmount *mnt);
 extern void mnt_unpin(struct vfsmount *mnt);
 extern int __mnt_is_readonly(struct vfsmount *mnt);
-
-extern struct vfsmount *do_kern_mount(const char *fstype, int flags,
-				      const char *name, void *data);
 
 struct file_system_type;
 extern struct vfsmount *vfs_kern_mount(struct file_system_type *type,

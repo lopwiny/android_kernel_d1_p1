@@ -2158,6 +2158,14 @@ static struct omap_dss_device front_lcd_device = {
                 .data4_pol      = 0,
                 .type           = OMAP_DSS_DSI_TYPE_VIDEO_MODE,
         },
+        .panel = {
+                .timings        = {
+                    .x_res      = 720,
+                    .y_res      = 1280,
+                },
+                .width_in_um    = 58000,
+                .height_in_um   = 102000,
+        },
         .clocks                 = {
                 .dispc          = {
                         .channel        = {
@@ -2238,10 +2246,10 @@ static struct omap_dss_board_info sdp4430_dss_data = {
     .default_device    =    &sdp4430_lcd_device,
 #elif defined(CONFIG_PANEL_HUAWEI)
     .default_device    =    &huawei_sdp4430_lcd_device,
-#elif defined(CONFIG_PANEL_SP_HUAWEI)
-    .default_device    =    &t0_lcd_device,
 #elif defined(CONFIG_PANEL_TOSHIBA_MDV20)
     .default_device =    &front_lcd_device,
+#elif defined(CONFIG_PANEL_SP_HUAWEI)
+    .default_device    =    &t0_lcd_device,
 #else
     .default_device = NULL,
 #endif
