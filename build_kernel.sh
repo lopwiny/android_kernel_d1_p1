@@ -18,7 +18,7 @@ export CROSS_COMPILE=~/AndroidSources/linaro-4.9/bin/arm-eabi-
 export LOCALVERSION="-mm"
 export USE_CCACHE=1
 export CCACHE_DIR=~/.ccache/front-kernel
-export MY_CONFIG=front_defconfig
+export MY_CONFIG=huawei_omap4_defconfig
 ccache -M 5G
 
 ##############################################################################
