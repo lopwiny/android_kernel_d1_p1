@@ -323,8 +323,6 @@ void kernel_restart_prepare(char *cmd)
 	system_state = SYSTEM_RESTART;
 	usermodehelper_disable();
 	device_shutdown();
-	disable_nonboot_cpus();
-	syscore_shutdown();
 }
 
 /**
@@ -339,6 +337,7 @@ void kernel_restart(char *cmd)
 {
 	kernel_restart_prepare(cmd);
 	disable_nonboot_cpus();
+	syscore_shutdown();
 	if (!cmd)
 		printk(KERN_EMERG "Restarting system.\n");
 	else
@@ -364,6 +363,7 @@ static void kernel_shutdown_prepare(enum system_states state)
 void kernel_halt(void)
 {
 	kernel_shutdown_prepare(SYSTEM_HALT);
+	disable_nonboot_cpus();
 	syscore_shutdown();
 	printk(KERN_EMERG "System halted.\n");
 	kmsg_dump(KMSG_DUMP_HALT);
@@ -1905,6 +1905,9 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 		case PR_GET_TIMERSLACK:
 			error = current->timer_slack_ns;
 			break;
+		case PR_GET_EFFECTIVE_TIMERSLACK:
+			error = task_get_effective_timer_slack(current);
+			break;
 		case PR_SET_TIMERSLACK:
 			if (arg2 <= 0)
 				current->timer_slack_ns =
@@ -1949,11 +1952,11 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 				error = PR_MCE_KILL_DEFAULT;
 			break;
 		case PR_SET_TIMERSLACK_PID:
-			if (task_pid_vnr(current) != (pid_t)arg3 &&
+			if (current->pid != (pid_t)arg3 &&
 					!capable(CAP_SYS_NICE))
 				return -EPERM;
 			rcu_read_lock();
-			tsk = find_task_by_vpid((pid_t)arg3);
+			tsk = find_task_by_pid_ns((pid_t)arg3, &init_pid_ns);
 			if (tsk == NULL) {
 				rcu_read_unlock();
 				return -EINVAL;
@@ -1967,6 +1970,7 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 				tsk->timer_slack_ns = arg2;
 			put_task_struct(tsk);
 			error = 0;
+			break;
 		case PR_SET_VMA:
 			error = prctl_set_vma(arg2, arg3, arg4, arg5);
 			break;

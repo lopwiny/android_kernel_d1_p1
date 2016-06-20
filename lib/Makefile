@@ -24,7 +24,7 @@ CFLAGS_bitmap.o += -Os
 obj-y += bcd.o div64.o sort.o parser.o halfmd4.o debug_locks.o random32.o \
 	 bust_spinlocks.o hexdump.o kasprintf.o bitmap.o scatterlist.o \
 	 string_helpers.o gcd.o lcm.o list_sort.o uuid.o flex_array.o \
-	 bsearch.o find_last_bit.o
+	 bsearch.o find_last_bit.o llist.o
 obj-y += kstrtox.o
 obj-$(CONFIG_TEST_KSTRTOX) += test-kstrtox.o
 
@@ -122,9 +122,6 @@ CFLAGS_snappy.o += $(call cc-disable-warning, declaration-after-statement) \
 obj-$(CONFIG_SNAPPY) += snappy.o
 
 obj-$(CONFIG_CPU_RMAP) += cpu_rmap.o
-
-obj-$(CONFIG_LLIST) += llist.o
-
 
 obj-$(CONFIG_CORDIC) += cordic.o
 
