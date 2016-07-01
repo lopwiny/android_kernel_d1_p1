@@ -59,12 +59,12 @@ struct nat_entry {
 	do {								\
 		ne->checkpointed = false;				\
 		list_move_tail(&ne->list, &nm_i->dirty_nat_entries);	\
-	} while (0)
+	} while (0);
 #define __clear_nat_cache_dirty(nm_i, ne)				\
 	do {								\
 		ne->checkpointed = true;				\
 		list_move_tail(&ne->list, &nm_i->nat_entries);		\
-	} while (0)
+	} while (0);
 #define inc_node_version(version)	(++version)
 
 static inline void node_info_from_raw_nat(struct node_info *ni,
@@ -75,25 +75,9 @@ static inline void node_info_from_raw_nat(struct node_info *ni,
 	ni->version = raw_ne->version;
 }
 
-static inline void raw_nat_from_node_info(struct f2fs_nat_entry *raw_ne,
-						struct node_info *ni)
-{
-	raw_ne->ino = cpu_to_le32(ni->ino);
-	raw_ne->block_addr = cpu_to_le32(ni->blk_addr);
-	raw_ne->version = ni->version;
-}
-
-enum mem_type {
+enum nid_type {
 	FREE_NIDS,	/* indicates the free nid list */
-	NAT_ENTRIES,	/* indicates the cached nat entry */
-	DIRTY_DENTS	/* indicates dirty dentry pages */
-};
-
-struct nat_entry_set {
-	struct list_head set_list;	/* link with all nat sets */
-	struct list_head entry_list;	/* link with dirty nat entries */
-	nid_t start_nid;		/* start nid of nats in set */
-	unsigned int entry_cnt;		/* the # of nat entries in set */
+	NAT_ENTRIES	/* indicates the cached nat entry */
 };
 
 /*
@@ -197,7 +181,8 @@ static inline void copy_node_footer(struct page *dst, struct page *src)
 
 static inline void fill_node_footer_blkaddr(struct page *page, block_t blkaddr)
 {
-	struct f2fs_checkpoint *ckpt = F2FS_CKPT(F2FS_P_SB(page));
+	struct f2fs_sb_info *sbi = F2FS_SB(page->mapping->host->i_sb);
+	struct f2fs_checkpoint *ckpt = F2FS_CKPT(sbi);
 	struct f2fs_node *rn = F2FS_NODE(page);
 
 	rn->footer.cp_ver = ckpt->checkpoint_ver;
@@ -278,7 +263,7 @@ static inline void set_nid(struct page *p, int off, nid_t nid, bool i)
 {
 	struct f2fs_node *rn = F2FS_NODE(p);
 
-	f2fs_wait_on_page_writeback(p, NODE);
+	wait_on_page_writeback(p);
 
 	if (i)
 		rn->i.i_nid[off - NODE_DIR1_BLOCK] = cpu_to_le32(nid);
