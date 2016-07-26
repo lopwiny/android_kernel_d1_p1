@@ -16,9 +16,6 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
- *
- * History
- * DTS ID:            Author:    Date:       Modification:
  */
 
 #include <linux/io.h>
@@ -3936,11 +3933,6 @@ static struct omap_hwmod_ocp_if *omap44xx_mcbsp1_slaves[] = {
 	&omap44xx_l4_abe__mcbsp1_dma,
 };
 
-static struct omap_hwmod_opt_clk mcbsp1_opt_clks[] = {
-	{ .role = "pad_fck", .clk = "pad_clks_ck" },
-	{ .role = "prcm_clk", .clk = "mcbsp1_sync_mux_ck" },
-};
-
 static struct omap_hwmod omap44xx_mcbsp1_hwmod = {
 	.name		= "mcbsp1",
 	.class		= &omap44xx_mcbsp_hwmod_class,
@@ -3956,10 +3948,7 @@ static struct omap_hwmod omap44xx_mcbsp1_hwmod = {
 	},
 	.slaves		= omap44xx_mcbsp1_slaves,
 	.slaves_cnt	= ARRAY_SIZE(omap44xx_mcbsp1_slaves),
-	.opt_clks	= mcbsp1_opt_clks,
-	.opt_clks_cnt	= ARRAY_SIZE(mcbsp1_opt_clks),
 	.omap_chip	= OMAP_CHIP_INIT(CHIP_IS_OMAP44XX),
-
 };
 
 /* mcbsp2 */
@@ -4018,11 +4007,6 @@ static struct omap_hwmod_ocp_if *omap44xx_mcbsp2_slaves[] = {
 	&omap44xx_l4_abe__mcbsp2_dma,
 };
 
-static struct omap_hwmod_opt_clk mcbsp2_opt_clks[] = {
-	{ .role = "pad_fck", .clk = "pad_clks_ck" },
-	{ .role = "prcm_clk", .clk = "mcbsp2_sync_mux_ck" },
-};
-
 static struct omap_hwmod omap44xx_mcbsp2_hwmod = {
 	.name		= "mcbsp2",
 	.class		= &omap44xx_mcbsp_hwmod_class,
@@ -4038,8 +4022,6 @@ static struct omap_hwmod omap44xx_mcbsp2_hwmod = {
 	},
 	.slaves		= omap44xx_mcbsp2_slaves,
 	.slaves_cnt	= ARRAY_SIZE(omap44xx_mcbsp2_slaves),
-	.opt_clks	= mcbsp2_opt_clks,
-	.opt_clks_cnt	= ARRAY_SIZE(mcbsp2_opt_clks),
 	.omap_chip	= OMAP_CHIP_INIT(CHIP_IS_OMAP44XX),
 };
 
@@ -4099,11 +4081,6 @@ static struct omap_hwmod_ocp_if *omap44xx_mcbsp3_slaves[] = {
 	&omap44xx_l4_abe__mcbsp3_dma,
 };
 
-static struct omap_hwmod_opt_clk mcbsp3_opt_clks[] = {
-	{ .role = "pad_fck", .clk = "pad_clks_ck" },
-	{ .role = "prcm_clk", .clk = "mcbsp3_sync_mux_ck" },
-};
-
 static struct omap_hwmod omap44xx_mcbsp3_hwmod = {
 	.name		= "mcbsp3",
 	.class		= &omap44xx_mcbsp_hwmod_class,
@@ -4119,8 +4096,6 @@ static struct omap_hwmod omap44xx_mcbsp3_hwmod = {
 	},
 	.slaves		= omap44xx_mcbsp3_slaves,
 	.slaves_cnt	= ARRAY_SIZE(omap44xx_mcbsp3_slaves),
-	.opt_clks	= mcbsp3_opt_clks,
-	.opt_clks_cnt	= ARRAY_SIZE(mcbsp3_opt_clks),
 	.omap_chip	= OMAP_CHIP_INIT(CHIP_IS_OMAP44XX),
 };
 
@@ -4159,11 +4134,6 @@ static struct omap_hwmod_ocp_if *omap44xx_mcbsp4_slaves[] = {
 	&omap44xx_l4_per__mcbsp4,
 };
 
-static struct omap_hwmod_opt_clk mcbsp4_opt_clks[] = {
-	{ .role = "pad_fck", .clk = "pad_clks_ck" },
-	{ .role = "prcm_clk", .clk = "mcbsp4_sync_mux_ck" },
-};
-
 static struct omap_hwmod omap44xx_mcbsp4_hwmod = {
 	.name		= "mcbsp4",
 	.class		= &omap44xx_mcbsp_hwmod_class,
@@ -4179,8 +4149,6 @@ static struct omap_hwmod omap44xx_mcbsp4_hwmod = {
 	},
 	.slaves		= omap44xx_mcbsp4_slaves,
 	.slaves_cnt	= ARRAY_SIZE(omap44xx_mcbsp4_slaves),
-	.opt_clks	= mcbsp4_opt_clks,
-	.opt_clks_cnt	= ARRAY_SIZE(mcbsp4_opt_clks),
 	.omap_chip	= OMAP_CHIP_INIT(CHIP_IS_OMAP44XX),
 };
 
@@ -5588,7 +5556,7 @@ static struct omap_hwmod_ocp_if *omap44xx_uart1_slaves[] = {
 static struct omap_hwmod omap44xx_uart1_hwmod = {
 	.name		= "uart1",
 	.class		= &omap44xx_uart_hwmod_class,
-	.flags		= HWMOD_SWSUP_SIDLE | HWMOD_SWSUP_MSTANDBY,
+	.flags          = HWMOD_SWSUP_SIDLE,
 	.mpu_irqs	= omap44xx_uart1_irqs,
 	.mpu_irqs_cnt	= ARRAY_SIZE(omap44xx_uart1_irqs),
 	.sdma_reqs	= omap44xx_uart1_sdma_reqs,
@@ -5642,7 +5610,7 @@ static struct omap_hwmod_ocp_if *omap44xx_uart2_slaves[] = {
 static struct omap_hwmod omap44xx_uart2_hwmod = {
 	.name		= "uart2",
 	.class		= &omap44xx_uart_hwmod_class,
-	.flags		= HWMOD_SWSUP_SIDLE | HWMOD_SWSUP_MSTANDBY,
+	.flags		= HWMOD_SWSUP_SIDLE,
 	.mpu_irqs	= omap44xx_uart2_irqs,
 	.mpu_irqs_cnt	= ARRAY_SIZE(omap44xx_uart2_irqs),
 	.sdma_reqs	= omap44xx_uart2_sdma_reqs,
@@ -5696,9 +5664,7 @@ static struct omap_hwmod_ocp_if *omap44xx_uart3_slaves[] = {
 static struct omap_hwmod omap44xx_uart3_hwmod = {
 	.name		= "uart3",
 	.class		= &omap44xx_uart_hwmod_class,
-
-//	.flags		= HWMOD_SWSUP_SIDLE | HWMOD_SWSUP_MSTANDBY,
-	.flags		= (HWMOD_INIT_NO_IDLE | HWMOD_INIT_NO_RESET | HWMOD_SWSUP_SIDLE ),
+	.flags		= (HWMOD_SWSUP_SIDLE | HWMOD_INIT_NO_IDLE | HWMOD_INIT_NO_RESET),
 	.mpu_irqs	= omap44xx_uart3_irqs,
 	.mpu_irqs_cnt	= ARRAY_SIZE(omap44xx_uart3_irqs),
 	.sdma_reqs	= omap44xx_uart3_sdma_reqs,
@@ -5752,7 +5718,6 @@ static struct omap_hwmod_ocp_if *omap44xx_uart4_slaves[] = {
 static struct omap_hwmod omap44xx_uart4_hwmod = {
 	.name		= "uart4",
 	.class		= &omap44xx_uart_hwmod_class,
-	.flags		= HWMOD_SWSUP_SIDLE | HWMOD_SWSUP_MSTANDBY,
 	.mpu_irqs	= omap44xx_uart4_irqs,
 	.mpu_irqs_cnt	= ARRAY_SIZE(omap44xx_uart4_irqs),
 	.sdma_reqs	= omap44xx_uart4_sdma_reqs,
