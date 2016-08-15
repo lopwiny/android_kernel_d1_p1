@@ -14,8 +14,8 @@
 ##############################################################################
 export ARCH=arm
 export SUBARCH=arm
-# GCC 5.2 sources: https://github.com/arter97/arm-linux-androideabi-5.2.git
-export CROSS_COMPILE=~/AndroidSources/arm-linux-androideabi-5.2/bin/arm-eabi-
+# Linaro GCC 5.3.1 sources: http://releases.linaro.org/components/toolchain/binaries/5.3-2016.05/arm-linux-gnueabi/gcc-linaro-5.3.1-2016.05-i686_arm-linux-gnueabi.tar.xz
+export CROSS_COMPILE=~/AndroidSources/gcc-linaro-5.3.1-2016.05/bin/arm-linux-gnueabi-
 export LOCALVERSION="-mm"
 export USE_CCACHE=1
 export CCACHE_DIR=~/.ccache/front-kernel
