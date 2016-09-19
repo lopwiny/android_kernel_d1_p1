@@ -290,15 +290,13 @@ static void omap_write_buf_pref(struct mtd_info *mtd,
 						struct omap_nand_info, mtd);
 	uint32_t w_count = 0;
 	int i = 0, ret = 0;
-	u_char *buf1 = (u_char *)buf;
-	u32 *p32 = (u32 *)buf;
+	u16 *p = (u16 *)buf;
 	unsigned long tim, limit;
 
 	/* take care of subpage writes */
-	while (len % 4 != 0) {
+	if (len % 2 != 0) {
 		writeb(*buf, info->nand.IO_ADDR_W);
-		buf1++;
-		p32 = (u32 *)buf1;
+		p = (u16 *)(buf + 1);
 		len--;
 	}
 
@@ -308,15 +306,15 @@ static void omap_write_buf_pref(struct mtd_info *mtd,
 	if (ret) {
 		/* PFPW engine is busy, use cpu copy method */
 		if (info->nand.options & NAND_BUSWIDTH_16)
-			omap_write_buf16(mtd, (u_char *)p32, len);
+			omap_write_buf16(mtd, (u_char *)p, len);
 		else
-			omap_write_buf8(mtd, (u_char *)p32, len);
+			omap_write_buf8(mtd, (u_char *)p, len);
 	} else {
 		while (len) {
 			w_count = gpmc_read_status(GPMC_PREFETCH_FIFO_CNT);
-			w_count = w_count >> 2;
-			for (i = 0; (i < w_count) && len; i++, len -= 4)
-				*(u32 *)(info->nand.IO_ADDR_W) = *p32++;
+			w_count = w_count >> 1;
+			for (i = 0; (i < w_count) && len; i++, len -= 2)
+				iowrite16(*p++, info->nand.IO_ADDR_W);
 		}
 		/* wait for data to flushed-out before reset the prefetch */
 		tim = 0;
@@ -385,8 +383,7 @@ static inline int omap_nand_dma_transfer(struct mtd_info *mtd, void *addr,
 	}
 
 	if (is_write) {
-	    /* See comment for read below */
-	    omap_set_dma_dest_params(info->dma_ch, 0, OMAP_DMA_AMODE_POST_INC,
+	    omap_set_dma_dest_params(info->dma_ch, 0, OMAP_DMA_AMODE_CONSTANT,
 						info->phys_base, 0, 0);
 	    omap_set_dma_src_params(info->dma_ch, 0, OMAP_DMA_AMODE_POST_INC,
 							dma_addr, 0, 0);
@@ -394,14 +391,7 @@ static inline int omap_nand_dma_transfer(struct mtd_info *mtd, void *addr,
 					0x10, buf_len, OMAP_DMA_SYNC_FRAME,
 					OMAP24XX_DMA_GPMC, OMAP_DMA_DST_SYNC);
 	} else {
-	    /*
-	     * I don't know why, but using the intuitive
-	     * OMAP_DMA_AMODE_CONSTANT here causes an L3 interconnect fault.
-	     * Since any address in the area allocated to NAND will result
-	     * in GPMC activating the chip's CS, we are free to increment
-	     * the address though.
-	     */
-	    omap_set_dma_src_params(info->dma_ch, 0, OMAP_DMA_AMODE_POST_INC,
+	    omap_set_dma_src_params(info->dma_ch, 0, OMAP_DMA_AMODE_CONSTANT,
 						info->phys_base, 0, 0);
 	    omap_set_dma_dest_params(info->dma_ch, 0, OMAP_DMA_AMODE_POST_INC,
 							dma_addr, 0, 0);
