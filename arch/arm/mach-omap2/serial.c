@@ -17,13 +17,6 @@
  * License. See the file "COPYING" in the main directory of this archive
  * for more details.
  */
- 
-/*============================================================================================
- *修改历史
- *
- *问题单号	      修改人	   时间           原因
- *=============================================================================================
-*/
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/clk.h>
@@ -58,9 +51,11 @@ static struct omap_uart_port_info omap_serial_default_info[] = {
 		.dma_rx_buf_size = DEFAULT_RXDMA_BUFSIZE,
 		.dma_rx_poll_rate = DEFAULT_RXDMA_POLLRATE,
 		.dma_rx_timeout = DEFAULT_RXDMA_TIMEOUT,
-		.auto_sus_timeout = -1,
-		//.auto_sus_timeout = DEFAULT_AUTOSUSPEND_DELAY,
-
+		.auto_sus_timeout = DEFAULT_AUTOSUSPEND_DELAY,
+                .wer = (OMAP_UART_WER_RLSI | \
+                        OMAP_UART_WER_RHRI | OMAP_UART_WER_RX | \
+                        OMAP_UART_WER_DCDCD | OMAP_UART_WER_RI | \
+                        OMAP_UART_WER_DSR | OMAP_UART_WER_CTS),
 	},
 };
 
@@ -145,8 +140,7 @@ static struct omap_device_pad default_uart3_pads[] __initdata = {
 	{
 		.name	= "uart3_rx_irrx.uart3_rx_irrx",
 		.flags	= OMAP_DEVICE_PAD_REMUX | OMAP_DEVICE_PAD_WAKEUP,
-		//.enable	= OMAP_PIN_INPUT | OMAP_MUX_MODE0,
-		.enable	= OMAP_PIN_INPUT_PULLUP | OMAP_MUX_MODE3, //mode is GPIO143 and enable pullup trigger by wanguanglin 20110914
+		.enable	= OMAP_PIN_INPUT | OMAP_MUX_MODE0,
 		.idle	= OMAP_PIN_INPUT | OMAP_MUX_MODE0,
 	},
 };
@@ -165,14 +159,6 @@ static struct omap_device_pad default_omap36xx_uart4_pads[] __initdata = {
 };
 
 static struct omap_device_pad default_omap4_uart4_pads[] __initdata = {
-	{
-		.name	= "abe_dmic_clk1.uart4_cts",
-		.enable	= OMAP_PIN_INPUT_PULLUP | OMAP_MUX_MODE5,
-	},
-	{
-		.name	= "abe_dmic_din1.uart4_rts",
-		.enable	= OMAP_PIN_OUTPUT | OMAP_MUX_MODE5,
-	},
 	{
 		.name	= "uart4_tx.uart4_tx",
 		.enable	= OMAP_PIN_OUTPUT | OMAP_MUX_MODE0,
@@ -512,10 +498,5 @@ void __init omap_serial_board_init(struct omap_uart_port_info *platform_data)
  */
 void __init omap_serial_init(void)
 {
-	//omap_mux_init_signal("abe_dmic_clk1.uart4_cts", OMAP_MUX_MODE5);
-	//omap_mux_init_signal("abe_dmic_din1.uart4_rts", OMAP_MUX_MODE5);
-	
-	//omap_mux_init_signal("uart3_cts_rctx.uart1_tx", OMAP_MUX_MODE1);
-    //omap_mux_init_signal("mcspi1_cs1.uart1_rx", OMAP_MUX_MODE1 |OMAP_PIN_INPUT);
-	  omap_serial_board_init(NULL);
+	omap_serial_board_init(NULL);
 }
