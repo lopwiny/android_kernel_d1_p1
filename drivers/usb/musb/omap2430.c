@@ -40,7 +40,9 @@
 #include "omap2430.h"
 #include <hsad/config_interface.h>
 
+#ifdef CONFIG_HUAWEI_MHL_SII9244
 extern void	USB_Plugout_SetToD3( void );
+#endif
 
 struct omap2430_glue {
 	struct device		*dev;
@@ -345,9 +347,11 @@ static void musb_otg_notifier_work(struct work_struct *data_notifier_work)
 				pm_runtime_put_autosuspend(musb->controller);
 			}
 
+#ifdef CONFIG_HUAWEI_MHL_SII9244
 		if(FALSE == get_mhl_connect()) {
 			USB_Plugout_SetToD3();
 		}
+#endif
 
 		if (data->interface_type == MUSB_INTERFACE_UTMI) {
 			omap2430_musb_set_vbus(musb, 0);

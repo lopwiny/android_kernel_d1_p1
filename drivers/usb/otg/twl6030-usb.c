@@ -292,7 +292,12 @@ static irqreturn_t twl6030_usb_irq(int irq, void *_twl)
 	vbus_state = twl6030_readb(twl, TWL_MODULE_MAIN_CHARGE,
 						CONTROLLER_STAT1);
 	vbus_state = vbus_state & VBUS_DET;
-	if((vbus_state) && (!is_mhl_initialized())){
+
+#ifdef CONFIG_HUAWEI_MHL_SII9244
+	if((vbus_state) && (!is_mhl_initialized())) {
+#else
+	if(vbus_state) {
+#endif
 		hw_state = 0;
 	}
 
