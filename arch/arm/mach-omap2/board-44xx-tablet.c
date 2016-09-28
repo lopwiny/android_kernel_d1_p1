@@ -741,6 +741,7 @@ static void __init omap_tablet_reserve(void)
 
 #ifndef CONFIG_CMA
 	/* do the static reservations first */
+	memblock_remove(PHYS_ADDR_SMC_MEM, PHYS_ADDR_SMC_SIZE);
 	memblock_remove(PHYS_ADDR_DUCATI_MEM, PHYS_ADDR_DUCATI_SIZE);
 #endif
 
