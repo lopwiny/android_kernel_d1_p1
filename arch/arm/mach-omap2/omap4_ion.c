@@ -111,12 +111,7 @@ void __init omap_ion_init(void)
 	system_512m = (omap_total_ram_size() == SZ_512M);
 
 	/* carveout sizes */
-
-#ifdef CONFIG_HUAWEI_KERNEL
-        omap4_smc_size = 0;
-#else
 	omap4_smc_size = (SZ_1M * 3);
-#endif
 
 	if (system_512m) {
 		omap4_ion_heap_secure_input_size = 0;
@@ -150,12 +145,8 @@ void __init omap_ion_init(void)
 	/* carveout addresses */
 	omap4_smc_addr = PLAT_PHYS_OFFSET + omap_total_ram_size() -
 				omap4_smc_size;
-#ifdef CONFIG_HUAWEI_KERNEL
-        omap4_ion_heap_secure_input_addr = 0xba300000;
-#else
 	omap4_ion_heap_secure_input_addr = omap4_smc_addr -
 				omap4_ion_heap_secure_input_size;
-#endif
 	omap4_ion_heap_secure_output_wfdhdcp_addr =
 				omap4_ion_heap_secure_input_addr -
 				omap4_ion_heap_secure_output_wfdhdcp_size;
