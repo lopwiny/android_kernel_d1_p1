@@ -4723,8 +4723,6 @@ static int dsi_display_init_dispc(struct omap_dss_device *dssdev)
 			.vsw		= 1,
 			.vfp		= 0,
 			.vbp		= 0,
-			.x_res		= 540,
-			.y_res		= 960,
 		};
 
 		dispc_set_lcd_timings(dssdev->manager->id, &timings);
