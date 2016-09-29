@@ -4952,15 +4952,15 @@ int omapdss_dsi_display_enable(struct omap_dss_device *dssdev)
 			dssdev->panel.timings.pixel_clock * 1000);
 
 	if(!dssdev->skip_init)
-	{
 		dsi_enable_pll_clock(dsidev, 1);
 
+#ifndef CONFIG_HUAWEI_KERNEL
 	REG_FLD_MOD(dsidev, DSI_SYSCONFIG, 1, 1, 1);
 	_dsi_wait_reset(dsidev);
 
 	/* ENWAKEUP */
 	REG_FLD_MOD(dsidev, DSI_SYSCONFIG, 1, 2, 2);
-	}
+#endif
 
 	_dsi_initialize_irq(dsidev);
 
