@@ -658,8 +658,6 @@ static ssize_t mdv20_restart_video_xfer(struct device *dev,
 	// Enable HS mode
 	omapdss_dsi_vc_enable_hs(dssdev, 0, true);
 
-	// Enable Video mode
-	//dsi_videomode_panel_postinit(dssdev);
 	dsi_video_mode_enable(dssdev, 0x3e);
 
 	return snprintf(buf, PAGE_SIZE, "%d\n", r);
