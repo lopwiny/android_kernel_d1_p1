@@ -607,7 +607,7 @@ static ssize_t mdv20_display_mode_show(struct device *dev,
 		return r;
 	}
 
-	printk("HARII:: DISPLAY_MODE = %d \n",(int)data_buf[0]);	
+	printk("HARII:: DISPLAY_MODE = %d \n",(int)data_buf[0]);
 
 	return snprintf(buf, PAGE_SIZE, "%d\n", data_buf[0]);
 }
@@ -620,23 +620,21 @@ static ssize_t mdv20_signal_mode_show(struct device *dev,
 	struct omap_dss_device *dssdev = to_dss_device(dev);
 	static int index = 0;
 	if(index>255)
-       	 index=0;
-	
+	index=0;
+
 	data_buf[1] = index;
 	index +=50;
 	dsi_bus_lock(dssdev);
-	omapdss_dsi_vc_enable_lp_cmd_mode(dssdev, 0,1);
-	r = dsi_vc_mcs_write_nosync(dssdev,CMD_VC_CHANNEL, data_buf,7);
-	omapdss_dsi_vc_enable_lp_cmd_mode(dssdev, 0,0);
+	omapdss_dsi_vc_enable_lp_cmd_mode(dssdev, 0, 1);
+	r = dsi_vc_mcs_write_nosync(dssdev,CMD_VC_CHANNEL, data_buf, 7);
+	omapdss_dsi_vc_enable_lp_cmd_mode(dssdev, 0, 0);
 	dsi_bus_unlock(dssdev);
 	if (r < 0) {
 		printk("HARII:: %s, failed !!! \n",__func__);
 		return r;
 	}
-	omapdss_dsi_vc_enable_lp_cmd_mode(dssdev, 0, 0);
-       dsi_bus_unlock(dssdev);
 
-	printk("HARII:: SIGNALK_MODE = %d \n",(int)data_buf[0]);	
+	printk("HARII:: SIGNALK_MODE = %d \n",(int)data_buf[0]);
 
 	return 0;
 }
