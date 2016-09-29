@@ -302,7 +302,6 @@ int dsi_vc_gen_read(struct omap_dss_device *dssdev, int channel, u16 cmd,
         u8 *buf, int buflen);
 
 void dsi_videomode_panel_preinit(struct omap_dss_device *dssdev);
-void dsi_videomode_panel_postinit(struct omap_dss_device *dssdev);
 
 void dispc_enable_channel(enum omap_channel channel,
                 enum omap_display_type type, bool enable);
