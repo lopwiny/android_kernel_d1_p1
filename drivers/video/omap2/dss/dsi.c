@@ -5043,22 +5043,16 @@ void omapdss_dsi_vc_enable_lp_cmd_mode(struct omap_dss_device *dssdev,
 	struct platform_device *dsidev = dsi_get_dsidev_from_dssdev(dssdev);
 	DSSDBG("dsi_vc_enable_lp_cmd_mode(%d, %d)\n", cmd,channel);
 
-	//WARN_ON(!dsi_bus_is_locked(ix));
-    dsi_vc_enable(dsidev, channel, 0);
-    //msleep(5);
-    dsi_if_enable(dsidev, 0);
-    //msleep(5);
-    if (cmd)
-            REG_FLD_MOD(dsidev, DSI_VC_CTRL(channel), 0, 4, 4); // mode - Command mode;
-    else
-        REG_FLD_MOD(dsidev, DSI_VC_CTRL(channel), 1, 4, 4); // mode - video mode;
+	dsi_vc_enable(dsidev, channel, 0);
+	dsi_if_enable(dsidev, 0);
+	if (cmd)
+		REG_FLD_MOD(dsidev, DSI_VC_CTRL(channel), 0, 4, 4); // mode - Command mode;
+	else
+		REG_FLD_MOD(dsidev, DSI_VC_CTRL(channel), 1, 4, 4); // mode - video mode;
 
-    dsi_vc_enable(dsidev, channel, 1);
-    //msleep(5);
-    dsi_if_enable(dsidev, 1);
-    //msleep(5);
+	dsi_vc_enable(dsidev, channel, 1);
+	dsi_if_enable(dsidev, 1);
 }
-
 EXPORT_SYMBOL(omapdss_dsi_vc_enable_lp_cmd_mode);
 /*  Patch end */
 
