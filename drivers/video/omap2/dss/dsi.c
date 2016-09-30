@@ -1359,8 +1359,6 @@ static int dsi_calc_clock_rates(struct omap_dss_device *dssdev,
 
 	if (cinfo->use_sys_clk) {
 		cinfo->clkin = clk_get_rate(dsi->sys_clk);
-		if (cpu_is_omap44xx())
-			cinfo->clkin = 26000000;
 		/* XXX it is unclear if highfreq should be used
 		 * with DSS_SYS_CLK source also */
 		cinfo->highfreq = 0;
