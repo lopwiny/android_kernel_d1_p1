@@ -474,7 +474,7 @@ static int sdp4430_set_pdm_dl1_gains(struct snd_soc_dapm_context *dapm)
 		output = OMAP_ABE_DL1_EARPIECE;
 	} else if (snd_soc_dapm_get_pin_power(dapm, "Headset Stereophone")) {
 		val = snd_soc_read(twl6040_codec, TWL6040_REG_HSLCTL);
-		if (val & TWL6040_HSDACMODEL)
+		if (val & TWL6040_HSDACMODE)
 			/* HSDACL in LP mode */
 			output = OMAP_ABE_DL1_HEADSET_LP;
 		else

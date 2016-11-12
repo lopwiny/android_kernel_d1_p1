@@ -905,13 +905,13 @@ static int pga_event(struct snd_soc_dapm_widget *w,
 static int headset_power_mode(struct snd_soc_codec *codec, int high_perf)
 {
 	int hslctl, hsrctl;
-	int mask = TWL6040_HSDRVMODEL | TWL6040_HSDACMODEL;
+	int mask = TWL6040_HSDRVMODE | TWL6040_HSDACMODE;
 	int val;
 
 	hslctl = snd_soc_read(codec, TWL6040_REG_HSLCTL);
 	hsrctl = snd_soc_read(codec, TWL6040_REG_HSRCTL);
 
-	if ((hslctl & TWL6040_HSDACENAL) || (hsrctl & TWL6040_HSDACENAR)) {
+	if ((hslctl & TWL6040_HSDACENA) || (hsrctl & TWL6040_HSDACENA)) {
 		dev_err(codec->dev,
 			"mode change not allowed when HSDACs are active\n");
 		return -EPERM;
@@ -942,7 +942,7 @@ static int twl6040_hs_dac_left_event(struct snd_soc_dapm_widget *w,
 		case SND_SOC_DAPM_PRE_PMU:
 			/* HSDACL reset is done when HSDACR is enabled */
 			twl6040_reg_write(twl6040, TWL6040_REG_HSRCTL,
-					  hsrctl | TWL6040_HSDACENAR);
+					  hsrctl | TWL6040_HSDACENA);
 			break;
 		case SND_SOC_DAPM_POST_PMU:
 			/* Sync HSDACR with reg cache */
@@ -974,7 +974,7 @@ static int twl6040_hs_dac_right_event(struct snd_soc_dapm_widget *w,
 		case SND_SOC_DAPM_PRE_PMD:
 			/* HSDACR reset is done when HSDACL is enabled */
 			twl6040_reg_write(twl6040, TWL6040_REG_HSLCTL,
-					  hslctl | TWL6040_HSDACENAL);
+					  hslctl | TWL6040_HSDACENA);
 			break;
 		case SND_SOC_DAPM_POST_PMD:
 			/* Sync HSDACL with reg cache */
@@ -1259,11 +1259,11 @@ static irqreturn_t twl6040_audio_handler(int irq, void *data)
 
 		val = twl6040_read_reg_cache(codec, TWL6040_REG_HFLCTL);
 		twl6040_write(codec, TWL6040_REG_HFLCTL,
-				val & ~TWL6040_HFDRVENAL);
+				val & ~TWL6040_HFDRVENA);
 
 		val = twl6040_read_reg_cache(codec, TWL6040_REG_HFRCTL);
 		twl6040_write(codec, TWL6040_REG_HFRCTL,
-				val & ~TWL6040_HFDRVENAR);
+				val & ~TWL6040_HFDRVENA);
 
 		twl6040_report_event(twl6040, TWL6040_HFOC_EVENT);
 	}

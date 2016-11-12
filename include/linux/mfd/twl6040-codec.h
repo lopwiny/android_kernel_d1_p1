@@ -152,29 +152,23 @@ Problem NO.         Name        Time         Reason
 #define TWL6040_LPLLFIN			0x08
 #define TWL6040_HPLLSEL			0x10
 
-/* HSLCTL (0x10) fields */
+/* HS(L/R)CTL (0x10/0x11) fields */
 
-#define TWL6040_HSDACENAL		0x01
-#define TWL6040_HSDACMODEL		0x02
-#define TWL6040_HSDRVMODEL		0x08
-
-/* HSRCTL (0x11) fields */
-
-#define TWL6040_HSDACENAR		0x01
-#define TWL6040_HSDACMODER		0x02
-#define TWL6040_HSDRVMODER		0x08
+#define TWL6040_HSDACENA		(1 << 0)
+#define TWL6040_HSDACMODE		(1 << 1)
+#define TWL6040_HSDRVENA		(1 << 2)
+#define TWL6040_HSDRVMODE		(1 << 3)
 
 /* EARCTL (0x13) fields */
 
-#define TWL6040_EARENA			0x01
+#define TWL6040_EARENA			(1 << 0)
 
-/* HFLCTL (0x14) fields */
+/* HF(L/R)CTL (0x14/0x16) fields */
 
-#define TWL6040_HFDRVENAL		0x10
-
-/* HFRCTL (0x16) fields */
-
-#define TWL6040_HFDRVENAR		0x10
+#define TWL6040_HFDACENA		(1 << 0)
+#define TWL6040_HFPGAENA		(1 << 1)
+#define TWL6040_HFDRVENA		(1 << 4)
+#define TWL6040_HFSWENA			(1 << 6)
 
 /* VIBCTLL (0x18) fields */
 
