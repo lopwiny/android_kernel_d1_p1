@@ -75,7 +75,12 @@ struct twl6032_ideal_code {
 
 static struct twl6030_chnl_calib
 	twl6030_calib_tbl[GPADC_MAX_CHANNELS];
+
+#ifdef CONFIG_TWL6030_GPADC_CAL_BITMAP
+static const u32 calibration_bit_map = CONFIG_TWL6030_GPADC_CAL_BITMAP;
+#else
 static const u32 calibration_bit_map = 0x47FF;
+#endif
 
 /* Trim address where measured offset from ideal code is stored */
 static const u8 twl6030_trim_addr[GPADC_MAX_CHANNELS] = {

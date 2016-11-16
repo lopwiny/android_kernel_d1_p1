@@ -321,6 +321,13 @@ config TWL6030_GPADC
 	  Say yes here if you want support for the TWL6030 General Purpose
 	  A/D Convertor.
 
+config TWL6030_GPADC_CAL_BITMAP
+	hex "TWL6030 GPADC calibration bitmap"
+	depends on TWL6030_GPADC
+	default 0x47FF
+	help
+	  Bitmap of GPADC channels that use calibration.
+
 config MFD_TMIO
 	bool
 	default n
