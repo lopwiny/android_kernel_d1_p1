@@ -750,6 +750,21 @@ static int virtio_pci_freeze(struct device *dev)
 	return ret;
 }
 
+static int restore_common(struct device *dev)
+{
+	struct pci_dev *pci_dev = to_pci_dev(dev);
+	struct virtio_pci_device *vp_dev = pci_get_drvdata(pci_dev);
+	int ret;
+
+	ret = pci_enable_device(pci_dev);
+	if (ret)
+		return ret;
+	pci_set_master(pci_dev);
+	vp_finalize_features(&vp_dev->vdev);
+
+	return ret;
+}
+
 static int virtio_pci_restore(struct device *dev)
 {
 	struct pci_dev *pci_dev = to_pci_dev(dev);
@@ -760,14 +775,8 @@ static int virtio_pci_restore(struct device *dev)
 	drv = container_of(vp_dev->vdev.dev.driver,
 			   struct virtio_driver, driver);
 
-	ret = pci_enable_device(pci_dev);
-	if (ret)
-		return ret;
-
-	pci_set_master(pci_dev);
-	vp_finalize_features(&vp_dev->vdev);
-
-	if (drv && drv->restore)
+	ret = restore_common(dev);
+	if (!ret && drv && drv->restore)
 		ret = drv->restore(&vp_dev->vdev);
 
 	/* Finally, tell the device we're all set */
