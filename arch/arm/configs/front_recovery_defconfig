@@ -2089,12 +2089,6 @@ CONFIG_RTC_DRV_TWL4030=y
 # CONFIG_DMADEVICES is not set
 # CONFIG_AUXDISPLAY is not set
 # CONFIG_UIO is not set
-
-#
-# Virtio drivers
-#
-# CONFIG_VIRTIO_BALLOON is not set
-# CONFIG_VIRTIO_MMIO is not set
 CONFIG_STAGING=y
 # CONFIG_USBIP_CORE is not set
 # CONFIG_ECHO is not set
@@ -2154,10 +2148,7 @@ CONFIG_CLKDEV_LOOKUP=y
 CONFIG_HWSPINLOCK=y
 CONFIG_HWSPINLOCK_OMAP=y
 # CONFIG_OMAP_REMOTE_PROC is not set
-
-#
-# Virtio drivers
-#
+# CONFIG_VIRTIO_BALLOON is not set
 
 #
 # Board ID Configuration Support
