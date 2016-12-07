@@ -32,25 +32,6 @@ struct device platform_bus = {
 EXPORT_SYMBOL_GPL(platform_bus);
 
 /**
- * arch_setup_pdev_archdata - Allow manipulation of archdata before its used
- * @dev: platform device
- *
- * This is called before platform_device_add() such that any pdev_archdata may
- * be setup before the platform_notifier is called.  So if a user needs to
- * manipulate any relevant information in the pdev_archdata they can do:
- *
- * 	platform_devic_alloc()
- * 	... manipulate ...
- * 	platform_device_add()
- *
- * And if they don't care they can just call platform_device_register() and
- * everything will just work out.
- */
-void __weak arch_setup_pdev_archdata(struct platform_device *pdev)
-{
-}
-
-/**
  * platform_get_resource - get a resource for a device
  * @dev: platform device
  * @type: resource type
@@ -192,7 +173,6 @@ struct platform_device *platform_device_alloc(const char *name, int id)
 		pa->pdev.id = id;
 		device_initialize(&pa->pdev.dev);
 		pa->pdev.dev.release = platform_device_release;
-		arch_setup_pdev_archdata(&pa->pdev);
 	}
 
 	return pa ? &pa->pdev : NULL;
@@ -354,7 +334,6 @@ EXPORT_SYMBOL_GPL(platform_device_del);
 int platform_device_register(struct platform_device *pdev)
 {
 	device_initialize(&pdev->dev);
-	arch_setup_pdev_archdata(pdev);
 	return platform_device_add(pdev);
 }
 EXPORT_SYMBOL_GPL(platform_device_register);
@@ -375,64 +354,52 @@ void platform_device_unregister(struct platform_device *pdev)
 EXPORT_SYMBOL_GPL(platform_device_unregister);
 
 /**
- * platform_device_register_full - add a platform-level device with
+ * platform_device_register_resndata - add a platform-level device with
  * resources and platform-specific data
  *
- * @pdevinfo: data used to create device
+ * @parent: parent device for the device we're adding
+ * @name: base name of the device we're adding
+ * @id: instance id
+ * @res: set of resources that needs to be allocated for the device
+ * @num: number of resources
+ * @data: platform specific data for this platform device
+ * @size: size of platform specific data
  *
  * Returns &struct platform_device pointer on success, or ERR_PTR() on error.
  */
-struct platform_device *platform_device_register_full(
-		const struct platform_device_info *pdevinfo)
+struct platform_device *platform_device_register_resndata(
+		struct device *parent,
+		const char *name, int id,
+		const struct resource *res, unsigned int num,
+		const void *data, size_t size)
 {
 	int ret = -ENOMEM;
 	struct platform_device *pdev;
 
-	pdev = platform_device_alloc(pdevinfo->name, pdevinfo->id);
+	pdev = platform_device_alloc(name, id);
 	if (!pdev)
-		goto err_alloc;
+		goto err;
 
-	pdev->dev.parent = pdevinfo->parent;
+	pdev->dev.parent = parent;
 
-	if (pdevinfo->dma_mask) {
-		/*
-		 * This memory isn't freed when the device is put,
-		 * I don't have a nice idea for that though.  Conceptually
-		 * dma_mask in struct device should not be a pointer.
-		 * See http://thread.gmane.org/gmane.linux.kernel.pci/9081
-		 */
-		pdev->dev.dma_mask =
-			kmalloc(sizeof(*pdev->dev.dma_mask), GFP_KERNEL);
-		if (!pdev->dev.dma_mask)
-			goto err;
-
-		*pdev->dev.dma_mask = pdevinfo->dma_mask;
-		pdev->dev.coherent_dma_mask = pdevinfo->dma_mask;
-	}
-
-	ret = platform_device_add_resources(pdev,
-			pdevinfo->res, pdevinfo->num_res);
+	ret = platform_device_add_resources(pdev, res, num);
 	if (ret)
 		goto err;
 
-	ret = platform_device_add_data(pdev,
-			pdevinfo->data, pdevinfo->size_data);
+	ret = platform_device_add_data(pdev, data, size);
 	if (ret)
 		goto err;
 
 	ret = platform_device_add(pdev);
 	if (ret) {
 err:
-		kfree(pdev->dev.dma_mask);
-
-err_alloc:
 		platform_device_put(pdev);
 		return ERR_PTR(ret);
 	}
 
 	return pdev;
 }
-EXPORT_SYMBOL_GPL(platform_device_register_full);
+EXPORT_SYMBOL_GPL(platform_device_register_resndata);
 
 static int platform_drv_probe(struct device *_dev)
 {

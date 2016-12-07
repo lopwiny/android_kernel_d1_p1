@@ -42,61 +42,16 @@ extern void platform_device_unregister(struct platform_device *);
 extern struct bus_type platform_bus_type;
 extern struct device platform_bus;
 
-extern void arch_setup_pdev_archdata(struct platform_device *);
 extern struct resource *platform_get_resource(struct platform_device *, unsigned int, unsigned int);
 extern int platform_get_irq(struct platform_device *, unsigned int);
 extern struct resource *platform_get_resource_byname(struct platform_device *, unsigned int, const char *);
 extern int platform_get_irq_byname(struct platform_device *, const char *);
 extern int platform_add_devices(struct platform_device **, int);
 
-struct platform_device_info {
-		struct device *parent;
-
-		const char *name;
-		int id;
-
-		const struct resource *res;
-		unsigned int num_res;
-
-		const void *data;
-		size_t size_data;
-		u64 dma_mask;
-};
-extern struct platform_device *platform_device_register_full(
-		const struct platform_device_info *pdevinfo);
-
-/**
- * platform_device_register_resndata - add a platform-level device with
- * resources and platform-specific data
- *
- * @parent: parent device for the device we're adding
- * @name: base name of the device we're adding
- * @id: instance id
- * @res: set of resources that needs to be allocated for the device
- * @num: number of resources
- * @data: platform specific data for this platform device
- * @size: size of platform specific data
- *
- * Returns &struct platform_device pointer on success, or ERR_PTR() on error.
- */
-static inline struct platform_device *platform_device_register_resndata(
+extern struct platform_device *platform_device_register_resndata(
 		struct device *parent, const char *name, int id,
 		const struct resource *res, unsigned int num,
-		const void *data, size_t size) {
-
-	struct platform_device_info pdevinfo = {
-		.parent = parent,
-		.name = name,
-		.id = id,
-		.res = res,
-		.num_res = num,
-		.data = data,
-		.size_data = size,
-		.dma_mask = 0,
-	};
-
-	return platform_device_register_full(&pdevinfo);
-}
+		const void *data, size_t size);
 
 /**
  * platform_device_register_simple - add a platform-level device and its resources
