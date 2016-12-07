@@ -256,8 +256,8 @@ add_head:
 	vq->data[head] = data;
 
 	/* Put entry in available array (but don't update avail->idx until they
-	 * do sync). */
-	avail = ((vq->vring.avail->idx + vq->num_added++) & (vq->vring.num-1));
+	 * do sync).  FIXME: avoid modulus here? */
+	avail = (vq->vring.avail->idx + vq->num_added++) % vq->vring.num;
 	vq->vring.avail->ring[avail] = head;
 
 	pr_debug("Added buffer head %i to %p\n", head, vq);
@@ -398,7 +398,6 @@ void *virtqueue_get_buf(struct virtqueue *_vq, unsigned int *len)
 	struct vring_virtqueue *vq = to_vvq(_vq);
 	void *ret;
 	unsigned int i;
-	u16 last_used;
 
 	START_USE(vq);
 
@@ -416,9 +415,8 @@ void *virtqueue_get_buf(struct virtqueue *_vq, unsigned int *len)
 	/* Only get used array entries after they have been exposed by host. */
 	virtio_rmb(vq);
 
-	last_used = (vq->last_used_idx & (vq->vring.num - 1));
-	i = vq->vring.used->ring[last_used].id;
-	*len = vq->vring.used->ring[last_used].len;
+	i = vq->vring.used->ring[vq->last_used_idx%vq->vring.num].id;
+	*len = vq->vring.used->ring[vq->last_used_idx%vq->vring.num].len;
 
 	if (unlikely(i >= vq->vring.num)) {
 		BAD_RING(vq, "id %u out of range\n", i);
