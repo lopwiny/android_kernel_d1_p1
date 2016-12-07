@@ -370,8 +370,7 @@ req_retry_pinned:
 				  req->rc->sdata, req->rc->capacity);
 	}
 
-	err = virtqueue_add_buf(chan->vq, chan->sg, out, in, req->tc,
-				GFP_ATOMIC);
+	err = virtqueue_add_buf(chan->vq, chan->sg, out, in, req->tc);
 	if (err < 0) {
 		if (err == -ENOSPC) {
 			chan->ring_bufs_avail = 0;

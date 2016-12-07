@@ -161,8 +161,7 @@ static void run_test(struct vdev_info *dev, struct vq_info *vq, int bufs)
 			if (started < bufs) {
 				sg_init_one(&sl, dev->buf, dev->buf_size);
 				r = virtqueue_add_buf(vq->vq, &sl, 1, 0,
-						      dev->buf + started,
-						      GFP_ATOMIC);
+						      dev->buf + started);
 				if (likely(r >= 0)) {
 					++started;
 					virtqueue_kick(vq->vq);
