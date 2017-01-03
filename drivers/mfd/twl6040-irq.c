@@ -18,7 +18,7 @@
 #include <linux/interrupt.h>
 #include <linux/mfd/core.h>
 #include <linux/mfd/twl6040-codec.h>
-#include "../../../sound/soc/codecs/twl6040.h"
+
 struct twl6040_irq_data {
 	int mask;
 	int status;
@@ -107,8 +107,7 @@ static irqreturn_t twl6040_irq_thread(int irq, void *data)
 	struct twl6040 *twl6040 = data;
 	u8 intid;
 	int i;
-        int val;
-        val = twl6040_reg_read(twl6040, TWL6040_REG_STATUS);
+
 	intid = twl6040_reg_read(twl6040, TWL6040_REG_INTID);
 
 	/* apply masking and report (backwards to handle READYINT first) */
