@@ -102,7 +102,7 @@ struct atmel_ts_data {
 #ifdef ATMEL_EN_SYSFS
     struct device dev;
 #endif
-
+    atomic_t keypad_enable;
 };
 
 static struct atmel_ts_data *private_ts;
@@ -556,11 +556,46 @@ static ssize_t atmel_obj_store(struct device *dev,
         printk(KERN_ERR "input[%s] is invalid\n",buf);
         return count;
     }
-	return count;
+        return count;
 }
 
 static DEVICE_ATTR(obj, (S_IWUSR|S_IRUGO),
 	atmel_obj_show, atmel_obj_store);
+
+static ssize_t keypad_enable_show(struct device *dev,
+                struct device_attribute *attr, char *buf)
+{
+    struct atmel_ts_data *ts;
+    ts = private_ts;
+
+    return sprintf(buf, "%d\n", atomic_read(&ts->keypad_enable));
+}
+
+static ssize_t keypad_enable_store(struct device *dev,
+                struct device_attribute *attr, const char *buf, size_t count)
+{
+    struct atmel_ts_data *ts;
+    ts = private_ts;
+
+    unsigned int val = 0;
+    sscanf(buf, "%d", &val);
+    val = (val == 0 ? 0 : 1);
+    atomic_set(&ts->keypad_enable, val);
+    if (val) {
+        printk("---=== touchkeys enabled\n");
+        set_bit(BTN_TOUCH, ts->input_dev->keybit);
+        set_bit(BTN_2, ts->input_dev->keybit);
+    } else {
+        printk("---=== touchkeys disabled\n");
+        clear_bit(BTN_TOUCH, ts->input_dev->keybit);
+        clear_bit(BTN_2, ts->input_dev->keybit);
+    }
+    input_sync(ts->input_dev);
+
+    return count;
+}
+
+static DEVICE_ATTR(keypad_enable, S_IRUGO | S_IWUSR | S_IWGRP, keypad_enable_show, keypad_enable_store);
 
 static struct kobject *android_touch_kobj;
 
@@ -611,6 +646,11 @@ static int atmel_touch_sysfs_init(void)
         printk(KERN_ERR "%s: sysfs_create_file failed\n", __func__);
         return ret;
     }
+    ret = sysfs_create_file(android_touch_kobj, &dev_attr_keypad_enable.attr);
+    if (ret) {
+        printk(KERN_ERR "%s: sysfs_create_file failed\n", __func__);
+        return ret;
+    }
     return 0;
 }
 
@@ -620,6 +660,7 @@ static void atmel_touch_sysfs_deinit(void)
     sysfs_remove_file(android_touch_kobj, &dev_attr_register.attr);
     sysfs_remove_file(android_touch_kobj, &dev_attr_vendor.attr);
     sysfs_remove_file(android_touch_kobj, &dev_attr_gpio.attr);
+    sysfs_remove_file(android_touch_kobj, &dev_attr_keypad_enable.attr);
     kobject_del(android_touch_kobj);
 }
 
@@ -804,8 +845,8 @@ static void compatible_input_report(struct input_dev *idev,
 {
     if (!press)
     {
-		time_check = (u32) ktime_to_ms(ktime_get());
-		touch_is_pressed = 0;
+        time_check = (u32) ktime_to_ms(ktime_get());
+        touch_is_pressed = 0;
         input_mt_sync(idev);
         input_report_key(idev,BTN_TOUCH,1);
     }
@@ -826,9 +867,9 @@ static void multi_input_report(struct atmel_ts_data *ts)
 
     for (loop_i = 0; loop_i < ts->finger_support; loop_i++) {
         if (ts->finger_pressed & BIT(loop_i)) {
-			touch_is_pressed = 1;
+                touch_is_pressed = 1;
                 compatible_input_report(ts->input_dev, &ts->finger_data[loop_i],
-                    1, (ts->finger_count == ++finger_report));
+                                        1, (ts->finger_count == ++finger_report));
         }
     }
 }
@@ -836,6 +877,7 @@ static void multi_input_report(struct atmel_ts_data *ts)
 static irqreturn_t atmel_ts_irq_handler(int irq, void *dev_id)
 {
     struct atmel_ts_data *ts = dev_id;
+    struct atmel_finger_data *fdata = ts->finger_data;
     int ret;
     uint8_t data[7];
     int8_t report_type;
@@ -857,9 +899,9 @@ static irqreturn_t atmel_ts_irq_handler(int irq, void *dev_id)
             }
             if(data[1]&0x80)
             {
-            	printk("--->Lintar test multi_input_report 100ms\n");
-               msleep(100);
-               i2c_atmel_write_byte_data(ts->client,
+                printk("--->Lintar test multi_input_report 100ms\n");
+                msleep(100);
+                i2c_atmel_write_byte_data(ts->client,
                 get_object_address(ts, GEN_COMMANDPROCESSOR_T6) +
                 T6_CFG_CALIBRATE, 0x55);
             }
@@ -878,14 +920,23 @@ static irqreturn_t atmel_ts_irq_handler(int irq, void *dev_id)
             msg_byte_num = 2;
         }
     }
+
     if (!ts->finger_count || ts->face_suppression) {
         ts->finger_pressed = 0;
         ts->finger_count = 0;
-        compatible_input_report(ts->input_dev, NULL, 0, 1);
+        if (atomic_read(&ts->keypad_enable)) {
+            compatible_input_report(ts->input_dev, NULL, 0, 1);
+        } else if (fdata->y < 1305) {
+            compatible_input_report(ts->input_dev, NULL, 0, 1);
+        }
     } else {
-
-        multi_input_report(ts);
+        if (atomic_read(&ts->keypad_enable)) {
+            multi_input_report(ts);
+        } else if (fdata->y < 1305) {
+            multi_input_report(ts);
+        }
     }
+
     input_sync(ts->input_dev);
     usb_plug_stat = get_plugin_device_status()?CONNECTED:NONE;
 
@@ -932,11 +983,11 @@ static int read_object_table(struct atmel_ts_data *ts)
 static int atmel_ts_charger_state(int state)
 {
     int ret = 0;
-   	struct atmel_ts_data *ts;
+    struct atmel_ts_data *ts;
     struct atmel_i2c_platform_data *pdata;
 
-	ts = private_ts;
-	pdata = ts->client->dev.platform_data;
+    ts = private_ts;
+    pdata = ts->client->dev.platform_data;
     pr_info("***USB status is : [%d]********\n",state);
     if (ts->config_setting[state].config_T8 != NULL)
         i2c_atmel_write(ts->client,
@@ -955,14 +1006,14 @@ static int atmel_ts_charger_state(int state)
             get_object_size(ts, PROCG_NOISESUPPRESSION_T48));
     }
 
-	Unlock_flag=0;
-	ts->calibration_confirm = 0;
+    Unlock_flag=0;
+    ts->calibration_confirm = 0;
 
-	msleep(20);
+    msleep(20);
 
-	i2c_atmel_write_byte_data(ts->client,					//calibrate the baseline
+    i2c_atmel_write_byte_data(ts->client,		//calibrate the baseline
     get_object_address(ts, GEN_COMMANDPROCESSOR_T6) +
-    T6_CFG_CALIBRATE, 0x55);
+                            T6_CFG_CALIBRATE, 0x55);
 
     return ret;
 }
@@ -1352,6 +1403,8 @@ static int atmel_ts_probe(struct i2c_client *client,
     set_bit(BTN_2, ts->input_dev->keybit);
     set_bit(EV_ABS, ts->input_dev->evbit);
     set_bit(INPUT_PROP_DIRECT, ts->input_dev->propbit);
+    atomic_set(&ts->keypad_enable, 1);
+
     input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X,
                 ts->abs_x_min, ts->abs_x_max, 0, 0);
     input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y,
@@ -1369,8 +1422,6 @@ static int atmel_ts_probe(struct i2c_client *client,
             ts->input_dev->name);
         goto err_input_register_device_failed;
     }
-
-
 
     ret = request_threaded_irq(client->irq,NULL,atmel_ts_irq_handler,
                               IRQF_TRIGGER_LOW |IRQF_ONESHOT,client->name,ts);
@@ -1560,4 +1611,3 @@ module_exit(atmel_ts_exit);
 
 MODULE_DESCRIPTION("ATMEL Touch driver");
 MODULE_LICENSE("GPL");
-
