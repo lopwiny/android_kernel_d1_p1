@@ -1194,17 +1194,9 @@ static inline int dsi_if_enable(struct platform_device *dsidev, bool enable)
         int count = 0;
         int maxtimes = 5;
 
-	DSSDBG("dsi_if_enable(%d)\n", enable);
+        DSSDBG("dsi_if_enable(%d)\n", enable);
 
-	enable = enable ? 1 : 0;
-#if 0
-	REG_FLD_MOD(dsidev, DSI_CTRL, enable, 0, 0); /* IF_EN */
-
-	if (wait_for_bit_change(dsidev, DSI_CTRL, 0, enable) != enable) {
-			DSSERR("Failed to set dsi_if_enable to %d\n", enable);
-			return -EIO;
-	}
-#endif
+        enable = enable ? 1 : 0;
 again:
         REG_FLD_MOD(dsidev, DSI_CTRL, enable, 0, 0); /* IF_EN */
         if((wait_for_bit_change(dsidev, DSI_CTRL, 0, enable) != enable) && (count < maxtimes))
@@ -1217,7 +1209,7 @@ again:
             }
             goto again;
         }
-	return 0;
+        return 0;
 }
 
 unsigned long dsi_get_pll_hsdiv_dispc_rate(struct platform_device *dsidev)
@@ -2241,13 +2233,14 @@ static inline unsigned ddr2ns(struct platform_device *dsidev, unsigned ddr)
 	return ddr * 1000 * 1000 / (ddr_clk / 1000);
 }
 
-static void dsi_cio_timings(struct omap_dss_device *dssdev)
+static void dsi_cio_timings(struct platform_device *dsidev)
 {
 	u32 r;
 	u32 ths_prepare, ths_prepare_ths_zero, ths_trail, ths_exit;
 	u32 tlpx_half, tclk_trail, tclk_zero;
 	u32 tclk_prepare;
-	struct platform_device *dsidev = dsi_get_dsidev_from_dssdev(dssdev);
+
+	/* calculate timings */
 
 	/* 1 * DDR_CLK = 2 * UI */
 
@@ -2274,7 +2267,6 @@ static void dsi_cio_timings(struct omap_dss_device *dssdev)
 
 	/* min tclk-prepare + tclk-zero = 300ns */
 	tclk_zero = ns2ddr(dsidev, 260);
-
 
 	DSSDBG("ths_prepare %u (%uns), ths_prepare_ths_zero %u (%uns)\n",
 		ths_prepare, ddr2ns(dsidev, ths_prepare),
@@ -2543,7 +2535,7 @@ static int dsi_cio_init(struct omap_dss_device *dssdev)
 	/* FORCE_TX_STOP_MODE_IO */
 	REG_FLD_MOD(dsidev, DSI_TIMING1, 0, 15, 15);
 
-	dsi_cio_timings(dssdev);
+	dsi_cio_timings(dsidev);
 
 	dsi->ulps_enabled = false;
 
@@ -3058,9 +3050,6 @@ err1:
 err0:
 	return r;
 }
-
-
-
 EXPORT_SYMBOL(dsi_vc_send_bta_sync);
 
 static inline void dsi_vc_write_long_header(struct platform_device *dsidev,
@@ -3251,7 +3240,7 @@ int dsi_vc_mcs_write_nosync(struct omap_dss_device *dssdev, int channel,
 		r = dsi_vc_send_short(dsidev, channel, DSI_DT_MCS_SHORT_WRITE_1,
 				data[0] | (data[1] << 8), 0);
 	} else { 
-		/* 0x39 = DCS Long Write */
+		/* 0x29 = DCS Long Write */
 		r = dsi_vc_send_long(dsidev, channel, DSI_DT_MCS_LONG_WRITE,
 				data, len, 0);
 	}
@@ -3308,7 +3297,7 @@ int dsi_vc_mcs_write(struct omap_dss_device *dssdev, int channel,
 
 	/* RX_FIFO_NOT_EMPTY */
 	if (REG_GET(dsidev, DSI_VC_CTRL(channel), 20, 20)) {
-		DSSERR("rx fifo not empty after write, dumping data:\n");
+		DSSERR(">>> rx fifo not empty after write, dumping data:\n");
 		dsi_vc_flush_receive_data(dsidev, channel);
 		r = -EIO;
 		goto err;
@@ -3316,7 +3305,7 @@ int dsi_vc_mcs_write(struct omap_dss_device *dssdev, int channel,
 
 	return 0;
 err:
-	DSSERR("dsi_vc_dcs_write(ch %d, cmd 0x%02x, len %d) failed\n",
+	DSSERR("dsi_vc_mcs_write(ch %d, cmd 0x%02x, len %d) failed\n",
 			channel, data[0], len);
 	return r;
 }
@@ -3403,7 +3392,11 @@ int dsi_vc_dcs_read(struct omap_dss_device *dssdev, int channel, u8 dcs_cmd,
 		buf[1] = (data >> 8) & 0xff;
 
 		return 2;
+#ifdef CONFIG_HUAWEI_KERNEL
+	} else if (dt == DSI_DT_RX_DCS_LONG_READ || dt == DSI_DT_RX_LONG_READ) {
+#else
 	} else if (dt == DSI_DT_RX_DCS_LONG_READ) {
+#endif
 		int w;
 		int len = FLD_GET(val, 23, 8);
 		if (dsi->debug_read)
@@ -3794,11 +3787,9 @@ static int dsi_enter_ulps(struct platform_device *dsidev)
 	if (dsi->ulps_enabled)
 		return 0;
 
-	/* DDR_CLK_ALWAYS_ON */
 	if (REG_GET(dsidev, DSI_CLK_CTRL, 13, 13)) {
-		dsi_if_enable(dsidev, 0);
-		REG_FLD_MOD(dsidev, DSI_CLK_CTRL, 0, 13, 13);
-		dsi_if_enable(dsidev, 1);
+		DSSERR("DDR_CLK_ALWAYS_ON enabled when entering ULPS\n");
+		return -EIO;
 	}
 
 	dsi_sync_vc(dsidev, 0);
