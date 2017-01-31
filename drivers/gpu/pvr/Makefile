@@ -25,7 +25,8 @@ ccflags-y += \
 	-DSYS_SUPPORTS_SGX_IDLE_CALLBACK \
 	-DPVRSRV_REFCOUNT_DEBUG \
 	-DSYS_OMAP4_HAS_DVFS_FRAMEWORK \
-	-Idrivers/gpu/pvr/sgx
+	-Idrivers/gpu/pvr/sgx \
+	-fno-pic
 
 ccflags-$(CONFIG_PVR_SGXCORE_540) += \
 	-DSGX540 -DSUPPORT_SGX540 \
