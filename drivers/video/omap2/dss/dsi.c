@@ -3251,7 +3251,7 @@ int dsi_vc_mcs_write_nosync(struct omap_dss_device *dssdev, int channel,
 		r = dsi_vc_send_short(dsidev, channel, DSI_DT_MCS_SHORT_WRITE_1,
 				data[0] | (data[1] << 8), 0);
 	} else { 
-		/* 0x39 = DCS Long Write */
+		/* 0x29 = MCS Long Write */
 		r = dsi_vc_send_long(dsidev, channel, DSI_DT_MCS_LONG_WRITE,
 				data, len, 0);
 	}
@@ -3277,7 +3277,7 @@ int dsi_vc_dcs_write(struct omap_dss_device *dssdev, int channel, u8 *data,
 
 	/* RX_FIFO_NOT_EMPTY */
 	if (REG_GET(dsidev, DSI_VC_CTRL(channel), 20, 20)) {
-		DSSERR("rx fifo not empty after write, dumping data:\n");
+		DSSERR("DCS: rx fifo not empty after write, dumping data:\n");
 		dsi_vc_flush_receive_data(dsidev, channel);
 		r = -EIO;
 		goto err;
@@ -3308,7 +3308,7 @@ int dsi_vc_mcs_write(struct omap_dss_device *dssdev, int channel,
 
 	/* RX_FIFO_NOT_EMPTY */
 	if (REG_GET(dsidev, DSI_VC_CTRL(channel), 20, 20)) {
-		DSSERR("rx fifo not empty after write, dumping data:\n");
+		DSSERR("MCS: rx fifo not empty after write, dumping data:\n");
 		dsi_vc_flush_receive_data(dsidev, channel);
 		r = -EIO;
 		goto err;
@@ -3316,7 +3316,7 @@ int dsi_vc_mcs_write(struct omap_dss_device *dssdev, int channel,
 
 	return 0;
 err:
-	DSSERR("dsi_vc_dcs_write(ch %d, cmd 0x%02x, len %d) failed\n",
+	DSSERR("dsi_vc_mcs_write(ch %d, cmd 0x%02x, len %d) failed\n",
 			channel, data[0], len);
 	return r;
 }
